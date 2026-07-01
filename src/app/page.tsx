@@ -19,8 +19,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 border-b border-slate-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-blue-200">
-              ♥
+            <div className="w-9 h-9 flex items-center justify-center rounded-xl overflow-hidden shadow-sm shadow-blue-200">
+              <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-xl font-bold text-slate-900 tracking-tight">PVCare</span>
           </div>

@@ -71,8 +71,8 @@ export default function PasienPage() {
       {/* ==================== NAVBAR ==================== */}
       <nav className="bg-white border-b border-slate-200/80 sticky top-0 z-40 px-6 lg:px-10 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <div className="w-8 h-8 flex items-center justify-center rounded-lg overflow-hidden shadow-sm shadow-blue-200">
+            <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
           </div>
           <span className="font-extrabold text-xl text-slate-800 tracking-tight">PVCare</span>
         </div>

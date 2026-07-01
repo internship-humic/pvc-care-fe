@@ -204,7 +204,7 @@ export default function LoginPage() {
             </div>
           </form>
 
-          {/* --- SOCIAL LOGIN --- */}
+          {/* --- SOCIAL LOGIN 
           <div className="pt-8">
             <div className="flex items-center gap-4 mb-6">
               <div className="flex-1 h-px bg-slate-200"></div>
@@ -224,6 +224,7 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+          --- */}
 
         </div>
       </div>

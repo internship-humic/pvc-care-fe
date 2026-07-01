@@ -45,13 +45,21 @@ export default function RegisterPage() {
         ? 'http://localhost:8000/api/auth/register/patient' 
         : 'http://localhost:8000/api/auth/register/doctor';
 
-      let bodyData;
-      let headers: HeadersInit = { 'Content-Type': 'application/json' }; // Kita pakai JSON untuk keduanya
+      let bodyData: BodyInit;
+      let headers: HeadersInit = {}; // Akan diisi jika JSON, dibiarkan kosong jika FormData
 
       if (role === 'dokter') {
-        // 1. Fungsi Kompresi Gambar & Ubah ke Base64
-        let photoString = "";
-        
+        // Menggunakan FormData karena butuh upload file (multipart/form-data)
+        const submitFormData = new FormData();
+        submitFormData.append('email', formData.email);
+        submitFormData.append('password', formData.password);
+        submitFormData.append('profile', JSON.stringify({
+  name: formData.name,
+  phone: formData.phone,
+  gender: formData.gender,
+  birthdate: formData.birthDate
+}));
+
         if (profileImage) {
           try {
             // Opsi kompresi: Maksimal 150 KB (0.15 MB) dan dimensi maksimal 800px
@@ -64,14 +72,8 @@ export default function RegisterPage() {
             // Proses "diet" gambar secara otomatis
             const compressedFile = await imageCompression(profileImage, options);
 
-            // Ubah file yang sudah ramping menjadi string Base64
-            photoString = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.readAsDataURL(compressedFile);
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = error => reject(error);
-            });
-            
+            // Tambahkan file murni ke FormData (bukan Base64)
+            submitFormData.append('profile_photo', compressedFile);
           } catch (error) {
             console.error("Error saat kompresi gambar:", error);
             setMessage({ type: 'error', text: 'Gagal memproses foto profil. Coba gambar lain.' });
@@ -80,21 +82,11 @@ export default function RegisterPage() {
           }
         }
 
-        // 2. Bungkus sebagai JSON biasa (Sama seperti pasien, ditambah foto)
-        bodyData = JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          profile: {
-            name: formData.name,
-            phone: formData.phone,
-            gender: formData.gender,
-            birthdate: formData.birthDate, 
-            profile_photo: photoString || "default.png" 
-          }
-        });
-        
+        bodyData = submitFormData;
+        // JANGAN set Content-Type untuk FormData, biarkan browser otomatis mengaturnya (multipart boundary)
       } else {
-        // STRUKTUR DATA PASIEN
+        // STRUKTUR DATA PASIEN (Tetap JSON)
+        headers = { 'Content-Type': 'application/json' };
         bodyData = JSON.stringify({
           email: formData.email,
           password: formData.password,
