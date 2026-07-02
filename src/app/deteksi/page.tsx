@@ -4,15 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// --- DATA DUMMY DOKTER (Ditambah agar variasi random lebih banyak) ---
-const DOCTORS = [
-  { id: 1, name: 'Dr. Michael Olise, Sp.JP, FIHA', spec: 'Cardiology Specialist', rating: 4.9, patients: 450, img: 'https://placehold.co/100x100/e2e8f0/64748b?text=MO' },
-  { id: 2, name: 'Dr. Alessia Russo, Sp.JP, FIHA', spec: 'Cardiology Specialist', rating: 4.8, patients: 380, img: 'https://placehold.co/100x100/e2e8f0/64748b?text=AR' },
-  { id: 3, name: 'Dr. Aitana Bonmati, Sp.JP, FIHA', spec: 'Cardiology Specialist', rating: 4.9, patients: 520, img: 'https://placehold.co/100x100/e2e8f0/64748b?text=AB' },
-  { id: 4, name: 'Dr. Joshua Kimmich, Sp.JP, FIHA', spec: 'Cardiology Specialist', rating: 4.7, patients: 310, img: 'https://placehold.co/100x100/e2e8f0/64748b?text=JK' },
-  { id: 5, name: 'Dr. Kevin De Bruyne, Sp.JP', spec: 'Cardiology Specialist', rating: 4.9, patients: 610, img: 'https://placehold.co/100x100/e2e8f0/64748b?text=KD' },
-  { id: 6, name: 'Dr. Keira Walsh, Sp.JP', spec: 'Cardiology Specialist', rating: 4.8, patients: 420, img: 'https://placehold.co/100x100/e2e8f0/64748b?text=KW' },
-];
+// --- DATA DOKTER DIAMBIL DARI API ---
 
 export default function DeteksiPage() {
   const router = useRouter();
@@ -32,7 +24,9 @@ export default function DeteksiPage() {
   const [progress, setProgress] = useState(0);
 
   // State Pilihan Dokter
-  const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
+  const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
+  const [scanId, setScanId] = useState<string | null>(null);
 
   // --- AMBIL DATA USER UNTUK NAVBAR ---
   useEffect(() => {
@@ -42,6 +36,33 @@ export default function DeteksiPage() {
     } else {
       setUserData(JSON.parse(userStr));
     }
+
+    const fetchDoctors = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/doctor-profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const resData = await response.json();
+        if (response.ok && resData.data) {
+          const verifiedDoctors = resData.data.filter((d: any) => d.verification_status === "Verified");
+          const mapped = verifiedDoctors.map((d: any) => ({
+            id: d.id,
+            name: d.user?.name || 'Dokter',
+            spec: 'Cardiology Specialist',
+            rating: 4.9,
+            patients: Math.floor(Math.random() * 500) + 100,
+            img: d.profile_photo ? `http://localhost:5000${d.profile_photo}` : `https://placehold.co/100x100/e2e8f0/64748b?text=DR`
+          }));
+          setDoctorsList(mapped);
+        }
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+      }
+    };
+    fetchDoctors();
   }, [router]);
 
   // --- FUNGSI DRAG & DROP ---
@@ -59,10 +80,35 @@ export default function DeteksiPage() {
   };
 
   // --- FUNGSI MULAI ANALISIS ---
-  const handleStartAnalysis = () => {
+  const handleStartAnalysis = async () => {
     if (!file) return;
     setStep(2);
     setProgress(0);
+
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch('http://localhost:5000/api/pvc-scan', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await response.json();
+      if (response.ok && data.data) {
+        setScanId(data.data.id);
+      } else {
+        alert("Gagal mengunggah scan: " + (data.message || "Unknown error"));
+        setStep(1);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan saat mengunggah scan");
+      setStep(1);
+    }
   };
 
   // --- SIMULASI LOADING (Step 2 -> Step 3) ---
@@ -84,26 +130,51 @@ export default function DeteksiPage() {
 
   // --- FUNGSI RANDOM DOKTER ---
   const handleRandomizeDoctor = () => {
+    if (doctorsList.length === 0) return;
+    if (doctorsList.length === 1) {
+      setSelectedDoctorId(doctorsList[0].id);
+      return;
+    }
     let randomIndex;
-    // Lakukan perulangan agar tidak mendapatkan dokter yang sama dua kali berturut-turut
     do {
-      randomIndex = Math.floor(Math.random() * DOCTORS.length);
-    } while (DOCTORS[randomIndex].id === selectedDoctorId);
+      randomIndex = Math.floor(Math.random() * doctorsList.length);
+    } while (doctorsList[randomIndex].id === selectedDoctorId);
     
-    setSelectedDoctorId(DOCTORS[randomIndex].id);
+    setSelectedDoctorId(doctorsList[randomIndex].id);
   };
 
   // Otomatis pilihkan 1 dokter acak saat pertama kali masuk Step 3
   useEffect(() => {
-    if (step === 3 && !selectedDoctorId) {
+    if (step === 3 && !selectedDoctorId && doctorsList.length > 0) {
       handleRandomizeDoctor();
     }
-  }, [step]);
+  }, [step, doctorsList, selectedDoctorId]);
 
   // --- FUNGSI KIRIM KE DOKTER (Step 3 -> Step 4) ---
-  const handleSubmitToDoctor = () => {
-    if (!selectedDoctorId) return;
-    setStep(4);
+  const handleSubmitToDoctor = async () => {
+    if (!selectedDoctorId || !scanId) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/pvc-scan/${scanId}/assign-doctor`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ doctor_profile_id: selectedDoctorId })
+      });
+      
+      if (response.ok) {
+        setStep(4);
+      } else {
+        const err = await response.json();
+        alert("Gagal mengirim ke dokter: " + (err.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan sistem");
+    }
   };
 
   // --- FUNGSI LOGOUT ---
@@ -118,7 +189,7 @@ export default function DeteksiPage() {
   const profilePhoto = userData?.doctor_profile?.profile_photo || userData?.profile?.profile_photo;
 
   // Mendapatkan detail dokter yang sedang terpilih saat ini
-  const selectedDoctorDetail = DOCTORS.find(d => d.id === selectedDoctorId);
+  const selectedDoctorDetail = doctorsList.find(d => d.id === selectedDoctorId);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">

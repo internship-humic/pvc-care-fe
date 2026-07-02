@@ -13,17 +13,25 @@ export default function VerifikasiPage() {
   // Referensi untuk elemen Canvas grafik ECG
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // State untuk form Verifikasi
   const [verificationStatus, setVerificationStatus] = useState("confirm");
-  const [diagClass, setDiagClass] = useState("");
+  const [diagClass, setDiagClass] = useState("Irama Normal");
   const [notes, setNotes] = useState("");
+  
+  // State for scans
+  const [pendingScans, setPendingScans] = useState<any[]>([]);
+  const [currentScan, setCurrentScan] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- AMBIL DATA USER ---
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      router.push('/login');
-    } else {
+    const fetchInitialData = async () => {
+      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      if (!userStr || !token) {
+        router.push('/login');
+        return;
+      }
+      
       const parsedUser = JSON.parse(userStr);
       setUserData(parsedUser);
       
@@ -31,9 +39,29 @@ export default function VerifikasiPage() {
       const isDoctor = roleValue.includes('doctor') || roleValue.includes('dokter');
       if (!isDoctor) {
         router.push('/dashboard');
+        return;
       }
-      setIsLoading(false);
-    }
+      
+      try {
+        const res = await fetch('http://localhost:5000/api/pvc-scan/history?status=Pending', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const scans = data.data?.data || [];
+          setPendingScans(scans);
+          if (scans.length > 0) {
+            setCurrentScan(scans[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching pending scans:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchInitialData();
   }, [router]);
 
   // --- LOGIKA MENGGAMBAR GRAFIK ECG (Diterjemahkan ke React) ---
@@ -223,53 +251,64 @@ export default function VerifikasiPage() {
             {/* INFORMASI PASIEN */}
             <section className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
               <h2 className="text-lg font-semibold mb-6">Informasi Pasien</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              
+              {!currentScan ? (
+                <div className="text-center py-10 text-slate-500">
+                  Tidak ada scan yang perlu diverifikasi saat ini.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Nama Pasien</p>
+                      <p className="font-bold text-slate-800">{currentScan.patient?.name || "Pasien"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Nama Pasien</p>
-                    <p className="font-bold text-slate-800">Ahmad Hidayat</p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Usia & Jenis Kelamin</p>
+                      <p className="font-bold text-slate-800">
+                        {currentScan.patient?.birthdate ? `${new Date().getFullYear() - new Date(currentScan.patient.birthdate).getFullYear()} tahun` : 'Tidak diketahui'} · {currentScan.patient?.gender === 'Male' ? 'Laki-laki' : currentScan.patient?.gender === 'Female' ? 'Perempuan' : 'Tidak diketahui'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Tanggal Upload</p>
+                      <p className="font-bold text-slate-800">{new Date(currentScan.created_at).toLocaleString('id-ID')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Catatan Keluhan</p>
+                      <p className="font-bold text-slate-800">{currentScan.patient_note || "Tidak ada catatan"}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Usia & Jenis Kelamin</p>
-                    <p className="font-bold text-slate-800">45 tahun · Laki-laki</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Tanggal Upload</p>
-                    <p className="font-bold text-slate-800">15 Mei 2026 · 14:30</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Kontak</p>
-                    <p className="font-bold text-slate-800">ahmad.hidayat@email.com</p>
-                  </div>
-                </div>
-              </div>
+              )}
             </section>
 
             {/* ECG WAVEFORM */}
             <section className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
               <h2 className="text-lg font-semibold mb-6">ECG Waveform Analysis</h2>
-              <div className="relative w-full h-80 bg-slate-50 rounded-xl overflow-hidden mb-6 border border-slate-100">
-                
-                {/* HTML5 Canvas yang dikontrol oleh useEffect */}
-                <canvas ref={canvasRef} className="w-full h-full block" />
+              <div className="relative w-full h-80 bg-slate-50 rounded-xl overflow-hidden mb-6 border border-slate-100 flex items-center justify-center">
+                {currentScan?.image_url ? (
+                   <img src={`http://localhost:5000${currentScan.image_url}`} alt="ECG" className="w-full h-full object-cover" />
+                ) : (
+                  <canvas ref={canvasRef} className="w-full h-full block" />
+                )}
                 
                 <div className="absolute bottom-4 left-4 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-lg flex gap-4 text-xs font-medium border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-2">
@@ -278,7 +317,7 @@ export default function VerifikasiPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-rose-500"></span>
-                    <span>PVC Detected (2 beats)</span>
+                    <span>PVC Detected</span>
                   </div>
                 </div>
               </div>
@@ -360,13 +399,47 @@ export default function VerifikasiPage() {
 
                 {/* Action Buttons */}
                 <div className="space-y-4 pt-4">
-                  <button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 rounded-full font-bold shadow-lg shadow-blue-200 hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                  <button 
+                    disabled={!currentScan || isSubmitting}
+                    onClick={async () => {
+                      if (!currentScan) return;
+                      setIsSubmitting(true);
+                      try {
+                        const token = localStorage.getItem('token');
+                        const finalResult = verificationStatus === 'confirm' ? 'PVC Terkonfirmasi' : diagClass;
+                        
+                        const res = await fetch(`http://localhost:5000/api/pvc-scan/${currentScan.id}/verify`, {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          },
+                          body: JSON.stringify({
+                            final_result: finalResult,
+                            doctor_note: notes
+                          })
+                        });
+                        
+                        if (res.ok) {
+                          alert("Scan berhasil diverifikasi!");
+                          window.location.reload();
+                        } else {
+                          const err = await res.json();
+                          alert("Gagal memverifikasi scan: " + (err.message || 'Unknown error'));
+                        }
+                      } catch (error) {
+                         alert("Terjadi kesalahan sistem.");
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 rounded-full font-bold shadow-lg shadow-blue-200 hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    Submit Verifikasi
+                    {isSubmitting ? "Submitting..." : "Submit Verifikasi"}
                   </button>
-                  <button onClick={() => router.push('/pasien')} className="w-full border border-slate-200 text-slate-600 py-4 rounded-full font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                  <button onClick={() => router.push('/dashboard')} className="w-full border border-slate-200 text-slate-600 py-4 rounded-full font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    Pilih Pasien Lain
+                    Kembali ke Dashboard
                   </button>
                 </div>
 
@@ -389,32 +462,22 @@ export default function VerifikasiPage() {
               <div className="space-y-4">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
                   <p className="text-xs text-white/60 font-medium mb-1 uppercase">Status Deteksi</p>
-                  <p className="text-xl font-bold">PVC Detected</p>
+                  <p className="text-xl font-bold">{currentScan ? (currentScan.ai_result ? "PVC Detected" : "Normal") : "Menunggu"}</p>
                 </div>
                 
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
                   <p className="text-xs text-white/60 font-medium mb-1 uppercase">Confidence Level</p>
                   <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-2xl font-bold">98.5%</span>
+                    <span className="text-2xl font-bold">{currentScan?.ai_confidence || 0}%</span>
                   </div>
                   <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                    <div className="bg-white h-full" style={{ width: '98.5%' }}></div>
+                    <div className="bg-white h-full" style={{ width: `${currentScan?.ai_confidence || 0}%` }}></div>
                   </div>
-                </div>
-
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
-                  <p className="text-xs text-white/60 font-medium mb-1 uppercase">PVC Frequency</p>
-                  <p className="text-xl font-bold">12 / min</p>
                 </div>
 
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
                   <p className="text-xs text-white/60 font-medium mb-1 uppercase">Kategori</p>
-                  <p className="text-xl font-bold">Ringan - Sedang</p>
-                </div>
-
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
-                  <p className="text-xs text-white/60 font-medium mb-1 uppercase">Detected PVC Beats</p>
-                  <p className="text-xl font-bold">2 / 15</p>
+                  <p className="text-xl font-bold">{currentScan?.ai_result ? "Ringan - Sedang" : "Aman"}</p>
                 </div>
               </div>
 

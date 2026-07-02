@@ -1,9 +1,41 @@
+import { useEffect, useState } from 'react';
 import StatCard from './StatCard';
 
 export default function DokterDashboard({ userData }: { userData: any }) {
   const doctorName = userData?.profile?.name || userData?.name || 'Dokter';
   const verificationStatus = userData?.doctor_profile?.verification_status || userData?.profile?.verification_status || 'Pending';
   const isVerified = verificationStatus === 'Verified';
+
+  const [summary, setSummary] = useState<any>(null);
+  const [pendingScans, setPendingScans] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [sumRes, histRes] = await Promise.all([
+          fetch('http://localhost:5000/api/pvc-scan/dashboard/summary', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('http://localhost:5000/api/pvc-scan/history', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        if (sumRes.ok) {
+          const data = await sumRes.json();
+          setSummary(data.data);
+        }
+        
+        if (histRes.ok) {
+          const data = await histRes.json();
+          const scans = data.data?.data || [];
+          // Filter out the ones that are pending
+          const pending = scans.filter((s: any) => s.verification_status === "Pending");
+          setPendingScans(pending.slice(0, 3)); // show top 3
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchDashboardData();
+  }, []);
   
   return (
     <div className="space-y-6">
@@ -20,21 +52,10 @@ export default function DokterDashboard({ userData }: { userData: any }) {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="animate-fade-in-up delay-100"><StatCard icon="👥" title="Total Pasien" value="521" sub="" color="blue" /></div>
-        <div className="animate-fade-in-up delay-200"><StatCard icon="✓" title="Pasien Diverifikasi" value="518" sub="" color="green" /></div>
-        <div className="animate-fade-in-up delay-300"><StatCard icon="⏱" title="Menunggu Diverifikasi" value="3" sub="" color="purple" /></div>
+        <div className="animate-fade-in-up delay-100"><StatCard icon="👥" title="Total Verifikasi" value={summary?.total_verifications || 0} sub="" color="blue" /></div>
+        <div className="animate-fade-in-up delay-200"><StatCard icon="✓" title="Sudah Diverifikasi" value={summary?.verified_count || 0} sub="" color="green" /></div>
+        <div className="animate-fade-in-up delay-300"><StatCard icon="⏱" title="Menunggu Diverifikasi" value={summary?.pending_count || 0} sub="" color="purple" /></div>
         <div className="animate-fade-in-up delay-400"><StatCard icon="⭐" title="Rating Anda" value="4.9" sub="" color="orange" /></div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-         <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-5 h-72 flex flex-col justify-between animate-fade-in-up delay-300">
-           <h3 className="font-bold text-slate-800">Verifikasi Mingguan</h3>
-           <div className="flex-1 bg-slate-50 mt-4 rounded border border-dashed border-slate-200 flex items-center justify-center text-sm text-slate-400">Grafik Batang (Bar Chart)</div>
-         </div>
-         <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-5 h-72 flex flex-col justify-between animate-fade-in-up delay-400">
-           <h3 className="font-bold text-slate-800">Tren Pasien Bulanan</h3>
-           <div className="flex-1 bg-slate-50 mt-4 rounded border border-dashed border-slate-200 flex items-center justify-center text-sm text-slate-400">Grafik Garis (Line Chart)</div>
-         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -48,59 +69,26 @@ export default function DokterDashboard({ userData }: { userData: any }) {
              )}
            </div>
            <div className="space-y-3">
-             {[
-               { init: 'AH', name: 'Ahmad Hidayat', age: '45 tahun', date: '15 Mei 2026', conf: '98%', color: 'text-red-500', bg: 'bg-red-50' },
-               { init: 'SN', name: 'Siti Nurhaliza', age: '52 tahun', date: '14 Mei 2026', conf: '96%', color: 'text-orange-500', bg: 'bg-orange-50' },
-               { init: 'BS', name: 'Budi Santoso', age: '38 tahun', date: '14 Mei 2026', conf: '94%', color: 'text-green-500', bg: 'bg-green-50' },
-             ].map((item, i) => (
+             {pendingScans.length === 0 && <div className="text-sm text-slate-500">Tidak ada scan yang pending.</div>}
+             {pendingScans.map((item, i) => (
                <div key={i} className={`flex items-center justify-between p-3 border border-slate-100 rounded-xl transition-all group ${isVerified ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-60 cursor-not-allowed bg-slate-50'}`}>
                  <div className="flex items-center gap-3">
-                   <div className={`w-10 h-10 rounded-lg bg-blue-50 text-blue-600 font-bold flex items-center justify-center transition ${isVerified ? 'group-hover:bg-blue-600 group-hover:text-white' : ''}`}>{item.init}</div>
+                   <div className={`w-10 h-10 rounded-lg bg-blue-50 text-blue-600 font-bold flex items-center justify-center transition ${isVerified ? 'group-hover:bg-blue-600 group-hover:text-white' : ''}`}>{(item.patient?.name || "P")[0]}</div>
                    <div>
-                     <p className={`font-bold text-slate-800 text-sm transition ${isVerified ? 'group-hover:text-blue-600' : ''}`}>{item.name}</p>
-                     <p className="text-[10px] text-slate-500">{item.age} • Uploaded: {item.date}</p>
+                     <p className={`font-bold text-slate-800 text-sm transition ${isVerified ? 'group-hover:text-blue-600' : ''}`}>{item.patient?.name || "Pasien"}</p>
+                     <p className="text-[10px] text-slate-500">Uploaded: {new Date(item.created_at).toLocaleString('id-ID')}</p>
                    </div>
                  </div>
                  <div className="text-right flex items-center gap-4">
                    <div>
                      <p className="text-[10px] text-slate-400 font-medium">AI Confidence</p>
-                     <p className="text-blue-600 font-extrabold text-lg leading-none mt-1">{item.conf}</p>
-                     <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full mt-1 inline-block ${item.color} ${item.bg}`}>Status</span>
+                     <p className="text-blue-600 font-extrabold text-lg leading-none mt-1">{item.ai_confidence}%</p>
+                     <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full mt-1 inline-block text-orange-500 bg-orange-50`}>Pending</span>
                    </div>
                    {!isVerified && <span className="text-slate-300 text-xl" title="Terkunci">🔒</span>}
                  </div>
                </div>
              ))}
-           </div>
-         </div>
-         
-         <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-5 animate-fade-in-up delay-400">
-           <h3 className="font-bold text-slate-800 mb-4">Aktivitas Terbaru</h3>
-           <div className="space-y-5">
-              <div className="flex gap-3 relative before:absolute before:left-4 before:top-8 before:w-0.5 before:h-8 before:bg-slate-100">
-                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0 z-10">📈</div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800 leading-tight">Verified PVC analysis</p>
-                  <p className="text-xs text-slate-500 mt-1">Ahmad Hidayat</p>
-                  <p className="text-[10px] text-slate-400 mt-1">2 jam yang lalu</p>
-                </div>
-              </div>
-              <div className="flex gap-3 relative before:absolute before:left-4 before:top-8 before:w-0.5 before:h-8 before:bg-slate-100">
-                <div className="w-8 h-8 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center text-xs shrink-0 z-10">👁️</div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800 leading-tight">Reviewed ECG data</p>
-                  <p className="text-xs text-slate-500 mt-1">Siti Nurhaliza</p>
-                  <p className="text-[10px] text-slate-400 mt-1">4 jam yang lalu</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center text-xs shrink-0 z-10">📝</div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800 leading-tight">Added medical notes</p>
-                  <p className="text-xs text-slate-500 mt-1">Budi Santoso</p>
-                  <p className="text-[10px] text-slate-400 mt-1">6 jam yang lalu</p>
-                </div>
-              </div>
            </div>
          </div>
       </div>
