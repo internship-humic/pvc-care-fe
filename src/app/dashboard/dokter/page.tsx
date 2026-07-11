@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 export default function KelolaDokterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -42,66 +42,15 @@ export default function KelolaDokterPage() {
     fetchDashboardData();
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/login');
-  };
-
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50">Loading Dashboard...</div>;
   }
-
-  const isAdmin = true;
-  const userInitials = 'A';
-  const profilePhoto = null;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
       
       {/* ==================== NAVBAR ==================== */}
-      <nav className="bg-white border-b border-slate-200/80 sticky top-0 z-40 px-6 lg:px-10 py-4 flex justify-between items-center shadow-sm">
-        
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 flex items-center justify-center rounded-lg overflow-hidden shadow-sm shadow-blue-200">
-            <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
-          </div>
-          <span className="font-extrabold text-xl text-slate-800 tracking-tight">PVCare <span className="text-red-500 text-xs uppercase bg-red-50 px-2 py-0.5 rounded-full ml-1 align-middle">Admin</span></span>
-        </div>
-
-        {/* MENU TENGAH */}
-        <div className="hidden md:flex items-center gap-2">
-          <Link href="/dashboard" className="flex items-center gap-2 px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-full text-sm font-medium transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-            Dashboard
-          </Link>
-
-          <Link href="/dashboard/dokter" className="flex items-center gap-2 px-5 py-2 bg-[#4880FF] text-white rounded-full text-sm font-semibold shadow-sm transition hover:bg-blue-600">
-            👥 Kelola Dokter
-          </Link>
-          <Link href="/dashboard/pasien" className="flex items-center gap-2 px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-full text-sm font-medium transition">
-            🏥 Kelola Pasien
-          </Link>
-        </div>
-
-        {/* PROFIL KANAN */}
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <div 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-9 h-9 rounded-full border border-slate-200 overflow-hidden flex justify-center items-center cursor-pointer hover:ring-2 transition bg-slate-800 text-white"
-            >
-              <span className="font-bold text-sm uppercase">{userInitials}</span>
-            </div>
-
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-fade-in-up">
-                <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition"><span className="mr-2">🚪</span> Keluar</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+      <Navbar userData={userData} />
 
       {/* ==================== KONTEN KELOLA DOKTER ==================== */}
       <main className="max-w-7xl mx-auto px-6 py-8">

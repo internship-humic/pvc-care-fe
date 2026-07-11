@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Navbar from '@/components/Navbar';
 
 export default function VerifikasiPage() {
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Referensi untuk elemen Canvas grafik ECG
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -164,76 +164,12 @@ export default function VerifikasiPage() {
     };
   }, [isLoading]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/login');
-  };
-
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Memuat Meja Kerja...</div>;
-
-  const userInitials = userData?.profile?.name?.charAt(0) || userData?.name?.charAt(0) || 'D';
-  const profilePhoto = userData?.doctor_profile?.profile_photo || userData?.profile?.profile_photo;
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 pb-20">
       
       {/* ==================== NAVBAR ==================== */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 lg:px-8 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#4299E1] rounded-xl flex items-center justify-center text-white">
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-            </svg>
-          </div>
-          <span className="text-xl font-bold text-slate-800">PVCare</span>
-        </div>
-
-        <div className="hidden md:flex items-center gap-2">
-          <Link href="/dashboard" className="flex items-center gap-2 px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-full text-sm font-medium transition">
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-             Dashboard
-          </Link>
-          <Link href="/pasien" className="flex items-center gap-2 px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-full text-sm font-medium transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            Pasien
-          </Link>
-          <Link href="/verifikasi" className="flex items-center gap-2 px-5 py-2 bg-[#4880FF] text-white rounded-full text-sm font-semibold shadow-sm shadow-blue-500/30 transition hover:bg-blue-600">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Verifikasi
-          </Link>
-          <Link href="/riwayat" className="flex items-center gap-2 px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-full text-sm font-medium transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Riwayat
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-6">
-          <div className="relative cursor-pointer">
-            <svg className="h-6 w-6 text-slate-500 hover:text-slate-800 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-            </svg>
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">5</span>
-          </div>
-          
-          <div className="relative">
-            <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="w-10 h-10 rounded-full border-2 border-[#4299E1] overflow-hidden flex justify-center items-center cursor-pointer hover:ring-2 hover:ring-blue-100 transition bg-slate-100">
-              {profilePhoto ? (
-                 <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                 <span className="text-[#4299E1] font-bold text-sm uppercase">{userInitials}</span>
-              )}
-            </div>
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-fade-in-up">
-                <Link href="/profile" className="block px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#4299E1] transition"><span className="mr-2">👤</span> Profil Saya</Link>
-                <div className="h-px bg-slate-100 my-1"></div>
-                <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition"><span className="mr-2">🚪</span> Keluar</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+      <Navbar userData={userData} />
 
       {/* ==================== KONTEN UTAMA ==================== */}
       <main className="max-w-7xl mx-auto px-8 py-10 animate-fade-in-up">
