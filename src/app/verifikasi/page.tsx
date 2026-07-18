@@ -43,7 +43,7 @@ export default function VerifikasiPage() {
       }
       
       try {
-        const res = await fetch('http://localhost:5000/api/pvc-scan/history?status=Pending', {
+        const res = await fetch('http://localhost:8000/api/pvc-scans/history?status=Pending', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -240,8 +240,8 @@ export default function VerifikasiPage() {
             <section className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
               <h2 className="text-lg font-semibold mb-6">ECG Waveform Analysis</h2>
               <div className="relative w-full h-80 bg-slate-50 rounded-xl overflow-hidden mb-6 border border-slate-100 flex items-center justify-center">
-                {currentScan?.image_url ? (
-                   <img src={`http://localhost:5000${currentScan.image_url}`} alt="ECG" className="w-full h-full object-cover" />
+                {currentScan?.document_url ? (
+                   <img src={`http://localhost:8000${currentScan.document_url}`} alt="ECG" className="w-full h-full object-cover" />
                 ) : (
                   <canvas ref={canvasRef} className="w-full h-full block" />
                 )}
@@ -344,7 +344,7 @@ export default function VerifikasiPage() {
                         const token = localStorage.getItem('token');
                         const finalResult = verificationStatus === 'confirm' ? 'PVC Terkonfirmasi' : diagClass;
                         
-                        const res = await fetch(`http://localhost:5000/api/pvc-scan/${currentScan.id}/verify`, {
+                        const res = await fetch(`http://localhost:8000/api/pvc-scans/${currentScan.id}/verify`, {
                           method: 'PATCH',
                           headers: {
                             'Content-Type': 'application/json',

@@ -40,7 +40,7 @@ export default function DeteksiPage() {
     const fetchDoctors = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/doctor-profile', {
+        const response = await fetch('http://localhost:8000/api/doctor-profile', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -54,7 +54,7 @@ export default function DeteksiPage() {
             spec: 'Cardiology Specialist',
             rating: 4.9,
             patients: Math.floor(Math.random() * 500) + 100,
-            img: d.profile_photo ? `http://localhost:5000${d.profile_photo}` : `https://placehold.co/100x100/e2e8f0/64748b?text=DR`
+            img: d.profile_photo ? `http://localhost:8000${d.profile_photo}` : `https://placehold.co/100x100/e2e8f0/64748b?text=DR`
           }));
           setDoctorsList(mapped);
         }
@@ -90,7 +90,7 @@ export default function DeteksiPage() {
       const formData = new FormData();
       formData.append('image', file);
       
-      const response = await fetch('http://localhost:5000/api/pvc-scan', {
+      const response = await fetch('http://localhost:8000/api/pvc-scans', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -156,7 +156,7 @@ export default function DeteksiPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/pvc-scan/${scanId}/assign-doctor`, {
+      const response = await fetch(`http://localhost:8000/api/pvc-scans/${scanId}/assign-doctor`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

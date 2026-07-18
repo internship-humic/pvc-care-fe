@@ -75,10 +75,31 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon="🏥" title="Total Fasilitas" value="1" color="blue" />
-        <StatCard icon="👥" title="Total Pasien" value={patients.length.toString()} color="green" />
-        <StatCard icon="👨‍⚕️" title="Dokter Aktif" value={activeDoctorsCount.toString()} color="purple" />
-        <StatCard icon="⏳" title="Verifikasi Dokter" value={pendingDoctors.length.toString()} sub="Menunggu persetujuan" color="orange" />
+        <StatCard 
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} 
+          title="Total Fasilitas" 
+          value="1" 
+          color="blue" 
+        />
+        <StatCard 
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>} 
+          title="Total Pasien" 
+          value={patients.length.toString()} 
+          color="green" 
+        />
+        <StatCard 
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} 
+          title="Dokter Aktif" 
+          value={activeDoctorsCount.toString()} 
+          color="purple" 
+        />
+        <StatCard 
+          icon={<svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} 
+          title="Verifikasi Dokter" 
+          value={pendingDoctors.length.toString()} 
+          sub="Menunggu persetujuan" 
+          color="orange" 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -94,7 +115,13 @@ export default function AdminDashboard() {
                 <div key={doc.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center font-bold text-lg uppercase">
-                      {doc.name.charAt(0)}
+                      {doc.profile_photo ? (
+                            <img src={`http://localhost:8000${doc.profile_photo}`} alt={doc.name} className="w-full h-full object-cover rounded-xl" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 font-bold flex items-center justify-center text-sm uppercase">
+                              {doc.name.charAt(0)}
+                            </div>
+                          )}
                     </div>
                     <div>
                       <p className="font-bold text-slate-800">{doc.name}</p>

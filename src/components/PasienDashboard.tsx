@@ -11,8 +11,8 @@ export default function PasienDashboard({ userData }: { userData: any }) {
       try {
         const token = localStorage.getItem('token');
         const [sumRes, histRes] = await Promise.all([
-          fetch('http://localhost:5000/api/pvc-scan/history/summary', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('http://localhost:5000/api/pvc-scan/history', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch('http://localhost:8000/api/pvc-scans/history/summary', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('http://localhost:8000/api/pvc-scans/history', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         if (sumRes.ok) {
           const data = await sumRes.json();
@@ -45,8 +45,8 @@ export default function PasienDashboard({ userData }: { userData: any }) {
              <h3 className="font-bold text-blue-700 text-lg">Premature Ventricular Contractions</h3>
            </div>
            <div className="w-full h-40 bg-pink-50/50 border border-pink-100 rounded-lg flex items-center justify-center mb-4 overflow-hidden relative">
-             {lastScan?.image_url ? (
-               <img src={`http://localhost:5000${lastScan.image_url}`} alt="ECG" className="w-full h-full object-cover" />
+             {lastScan?.document_url ? (
+               <img src={`http://localhost:8000${lastScan.document_url}`} alt="ECG" className="w-full h-full object-cover" />
              ) : (
                <span className="text-pink-300 text-sm">Grafik ECG di sini</span>
              )}

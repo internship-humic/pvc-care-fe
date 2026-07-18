@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -24,6 +24,33 @@ export default function Navbar({ userData }: { userData: any }) {
   const userInitials = isAdmin ? 'A' : (userData?.profile?.name?.charAt(0) || userData?.name?.charAt(0) || 'U');
   const profilePhoto = userData?.doctor_profile?.profile_photo || userData?.profile?.profile_photo;
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (isAdmin) return;
+    const fetchUnreadCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('http://localhost:8000/api/notifications/unread-count', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.data?.unread_count ?? 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
+
   // --- FUNGSI STYLING MENU AKTIF ---
   // Jika pathname sama dengan path menu, jadikan biru. Jika tidak, jadikan abu-abu.
   const getMenuClass = (path: string) => {
@@ -37,8 +64,8 @@ export default function Navbar({ userData }: { userData: any }) {
       
       {/* KIRI: LOGO */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <div className="w-10 h-10  rounded-full flex items-center justify-center">
+          <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
         </div>
         <span className="font-extrabold text-xl text-slate-800 tracking-tight">
           PVCare {isAdmin && <span className="text-red-500 text-xs uppercase bg-red-50 px-2 py-0.5 rounded-full ml-1 align-middle">Admin</span>}
@@ -54,8 +81,14 @@ export default function Navbar({ userData }: { userData: any }) {
 
         {isAdmin && (
           <>
-            <Link href="/kelola-dokter" className={getMenuClass('/kelola-dokter')}>👥 Kelola Dokter</Link>
-            <Link href="/kelola-pasien" className={getMenuClass('/kelola-pasien')}>🏥 Kelola Pasien</Link>
+            <Link href="/kelola-dokter" className={getMenuClass('/kelola-dokter')}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              Kelola Dokter
+            </Link>
+            <Link href="/kelola-pasien" className={getMenuClass('/kelola-pasien')}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+              Kelola Pasien
+            </Link>
           </>
         )}
 
@@ -90,10 +123,14 @@ export default function Navbar({ userData }: { userData: any }) {
       {/* KANAN: PROFIL & NOTIFIKASI */}
       <div className="flex items-center gap-5">
         {!isAdmin && (
-          <button className="relative text-slate-500 hover:text-slate-800 transition">
+          <Link href="/notifikasi" className="relative text-slate-500 hover:text-slate-800 transition">
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white flex items-center justify-center text-[9px] font-bold rounded-full border-2 border-white shadow-sm">5</span>
-          </button>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white flex items-center justify-center text-[9px] font-bold rounded-full border-2 border-white shadow-sm">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
         )}
         
         <div className="relative">
@@ -102,7 +139,7 @@ export default function Navbar({ userData }: { userData: any }) {
             className={`w-9 h-9 rounded-full border border-slate-200 overflow-hidden flex justify-center items-center cursor-pointer hover:ring-2 transition ${isAdmin ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}
           >
             {profilePhoto ? (
-               <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+               <img src={`http://localhost:8000${profilePhoto}`} alt="Profile" className="w-full h-full object-cover" />
             ) : (
                <span className="font-bold text-sm uppercase">{userInitials}</span>
             )}

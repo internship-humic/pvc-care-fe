@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
@@ -8,6 +8,26 @@ import Navbar from '@/components/Navbar';
 export default function LandingPage() {
   // State untuk mengontrol FAQ mana yang terbuka
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+
+  useEffect(() => {
+    const fetchPublicDoctors = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/doctor-profile/public');
+        if (res.ok) {
+          const data = await res.json();
+          // The API returns the list directly under data.data or data, let's verify both
+          setDoctors(data.data || data || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch public doctors:", error);
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    fetchPublicDoctors();
+  }, []);
 
   const faqs = [
     {
@@ -92,7 +112,7 @@ export default function LandingPage() {
       {/* END: Header */}
 
       {/* BEGIN: Hero Section */}
-      <section className="pt-32 pb-0 lg:pt-40 bg-[#F8FAFC] overflow-hidden relative">
+      <section className="pt-32 pb-0 lg:pt-20 bg-[#F8FAFC] overflow-hidden relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="relative w-full">
             
@@ -125,7 +145,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, x: 50, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               transition={{ duration: 0.7, delay: 0.4, ease: 'easeOut' }}
-              className="absolute right-0 bottom-0 top-0 z-0 flex items-center justify-end pointer-events-none"
+              className="absolute right-0 bottom-8 lg:bottom-16 top-0 z-0 flex items-center justify-end pointer-events-none"
             >
               <img 
                 src="/pictureDokterBG.png"
@@ -314,27 +334,27 @@ export default function LandingPage() {
                 num: "25+",
                 label: "Dokter Spesialis Terverifikasi",
                 icon: (
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                    <img src="maki_doctor.png" alt="maki_doctor" className="w-full h-full object-cover" />
+                  </div>
                 )
               },
               {
                 num: "2,500+",
                 label: "Pasien Telah Dilayani",
                 icon: (
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                    <img src="activity.png" alt="activity" className="w-full h-full object-cover" />
+                  </div>
                 )
               },
               {
                 num: "98%",
                 label: "Tingkat Kepuasan Pengguna",
                 icon: (
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.514C5.024 10 5 9.5 5 9c0-.828.672-1.5 1.5-1.5z" />
-                  </svg>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                    <img src="ri_chat-smile-ai-3-line.png" alt="ri_chat-smile-ai-3-line" className="w-full h-full object-cover" />
+                  </div>
                 )
               }
             ].map((stat, idx) => (
@@ -372,49 +392,61 @@ export default function LandingPage() {
             Dokter Kami
           </motion.h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                name: "Michael Olise, Sp.JP, FIHA",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-E5m7kd41ATDOS5Rh6QlWnr4OPq8Xrczv9seqNanyhV0pJ0MCdOluKrE2pPrGIseECyNAkcMhaVhbUX7lIsHi84hwr8txvLY7Cfhtf-qI4thSIbYUSaRyTBa_HuGB2SlNrkO_BPGgv77-q896uozbNGfrbd_l3oFlBUhilsRtkOSb9fEYbJpyUMUN8A5KgvHxBWDFUtpUX82WJfitrZDexTSYt8a5W0plJaENun-_V9mD0ImyvEKHaFGhC9b1uCPKAYJtuAbOVgXP"
-              },
-              {
-                name: "Alessia Russo, Sp.JP, FIHA",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAK-fcl2uUlEuHZf5lxqx1gEaV9deMsyjxRjamzVKEeV5GO0aoDFG_qkAHspVf5p-glixDzRnfT1Ej6L_d99PSonqAmDnVWizHSCfs6LL45tT0UXaOOkNtSrvdEGhL6HAWWNMNmwN7SJMyzncylAYCLffluEjScqkm6behUBmNMz3nHrQigi39d5uTAgsyQNZsXDa4lrdwX0QxyxX0LktGAK3rbjC2ZsrDS6Vh8vEu-2dJdCjoR75gYA4ShjYodEyXArquG4JNz_sik"
-              },
-              {
-                name: "Aitana Bonmati, Sp.JP, FIHA",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBJC9MYw6seJnSP8Gi0jg-9Zyx7SQ24FZsVTIufx2P-burqWSidgUD8wWuKPrPNKgIljWVeJAL1YX_4ogtifAix6wMPYE3vx6LDg6vvWopNHxOmIKagdYTEe2DwNWGXvsj9cruTN6TgfG_UOKxxpWLz8lWffdnEng2R3Fb1JfeyR3GoOozKzgtsedjowrRJpemiccgH_-8WmqCe1r1lHzuLJ2RZQ0G4XMvBleb9aHvz_1jo7WQmZoVWzMaCHUlbU0y8GQuq5sjrfRxV"
-              },
-              {
-                name: "Joshua Kimmich, Sp.JP, FIHA",
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuC1KSPifVQ4pZGntnypIjj_Cr7CKFyfmSunaYovV87iRYuUgpWDQlXET55wiLB8ZVCWaOBo62jsv8xq89WStL7qQo4QydfzmSFhsPDMSl42_bvKm-_LzUzxc4L1nhel0FJ4cn2ABzRo_SvRehtOoKoCm8A6zO4dXgYsH_TTXffMDuxk583pHvpBzEYDwugcoR61t3pPBR_Hsn7Kiz9_AAdvGRP2mcBxauTxFLQ4Hq0bVyalzUVbjGySX4acwmIs6gKw1gDouQqg3w3a"
-              }
-            ].map((doc, idx) => (
-              <motion.div 
-                key={idx} 
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: idx * 0.12, ease: "easeOut" }}
-                className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300"
-              >
-                <img alt={doc.name} className="w-full h-64 object-cover object-top" src={doc.img} />
-                <div className="p-6 flex-1 flex flex-col">
-                  <h3 className="font-bold text-lg mb-1 text-gray-900">{doc.name}</h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    <span className="font-semibold text-primary">Spesialisasi:</span> Cardiology
-                  </p>
-                  <Link href="/register" className="mt-auto text-primary font-semibold flex items-center hover:text-primary-hover transition">
-                    More Info 
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          {loadingDoctors ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              <span className="ml-3 text-gray-500 font-medium font-sans">Memuat data dokter...</span>
+            </div>
+          ) : doctors.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <p className="text-gray-500 font-medium font-sans">Belum ada dokter yang terverifikasi saat ini.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {doctors.map((doc, idx) => {
+                const getDoctorImage = (photo: string) => {
+                  if (!photo) return "/docter1.png";
+                  if (photo.startsWith("http://") || photo.startsWith("https://")) {
+                    return photo;
+                  }
+                  const prefix = photo.startsWith("/") ? "" : "/";
+                  return `http://localhost:8000${prefix}${photo}`;
+                };
+
+                return (
+                  <motion.div 
+                    key={doc.id || idx} 
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.5, delay: idx * 0.12, ease: "easeOut" }}
+                    className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300"
+                  >
+                    <img 
+                      alt={doc.name} 
+                      className="w-full h-64 object-cover object-top" 
+                      src={getDoctorImage(doc.profile_photo)}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/docter1.png";
+                      }}
+                    />
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h3 className="font-bold text-lg mb-1 text-gray-900 font-sans">{doc.name}</h3>
+                      <p className="text-sm text-gray-500 mb-4 font-sans">
+                        <span className="font-semibold text-blue-500">Spesialisasi:</span> {doc.specialization || "Cardiology"}
+                      </p>
+                      <Link href="/register" className="mt-auto text-blue-500 font-semibold flex items-center hover:text-blue-600 transition">
+                        More Info 
+                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
       {/* END: Our Doctors */}
@@ -476,7 +508,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div className="flex items-center gap-3 mb-6 md:mb-0">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center">
                 <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
               </div>
               <div>
