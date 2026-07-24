@@ -150,7 +150,7 @@ export default function RegisterPage() {
 
         <div className="relative h-[75%] w-full flex items-end justify-center">
           <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[120%] aspect-square rounded-full border-[20px] border-white/10 z-0"></div>
-          <img src="https://placehold.co/800x600/transparent/white?text=Gambar+3+Dokter" alt="Doctors" className="relative z-10 object-cover w-[90%] h-auto" />
+          <img src="login_doctor.png" alt="Doctors" className="relative z-10 object-cover w-[90%] h-auto" />
 
           <div className={`absolute top-[30%] left-10 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 text-white shadow-xl transition-all duration-500 ease-out transform ${role === 'pasien' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12 pointer-events-none'}`}>
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">🔍</div>
@@ -358,7 +358,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {role === 'pasien' && (
+            {/* {role === 'pasien' && (
               <div className="pt-4">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="flex-1 h-px bg-slate-100"></div>
@@ -371,7 +371,7 @@ export default function RegisterPage() {
                   <button type="button" className="flex justify-center items-center py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm text-black text-xl"></button>
                 </div>
               </div>
-            )}
+            )} */}
           </form>
 
         </div>

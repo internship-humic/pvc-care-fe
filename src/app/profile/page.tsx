@@ -59,6 +59,62 @@ function PatientProfile({ userData }: { userData: any }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // State Modal Ubah Password
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    old_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handlePasswordChangeSubmit = async () => {
+    if (!passwordData.old_password || !passwordData.new_password || !passwordData.confirm_password) {
+      alert("Harap isi semua kolom password.");
+      return;
+    }
+
+    if (passwordData.new_password.length < 6) {
+      alert("Password baru minimal harus 6 karakter.");
+      return;
+    }
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      alert("Konfirmasi password baru tidak cocok.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8000/api/auth/change-password', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          old_password: passwordData.old_password,
+          new_password: passwordData.new_password
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Password berhasil diperbarui!");
+        setIsPasswordModalOpen(false);
+        setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+      } else {
+        alert("Gagal mengubah password: " + (data.message || "Terjadi kesalahan"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Terjadi kesalahan koneksi");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+  
   // Data Profil
   const profile = userData?.profile || userData?.patient_profile || {};
   const email = userData?.email || 'email@example.com';
@@ -279,11 +335,89 @@ function PatientProfile({ userData }: { userData: any }) {
               <p className="text-xs text-slate-500 mt-0.5">Kelola kata sandi akun Anda</p>
             </div>
           </div>
-          <button className="border border-slate-300 hover:border-slate-400 text-slate-700 font-bold py-2 px-5 rounded-xl text-sm bg-white shadow-sm transition-all">
+          <button 
+            onClick={() => setIsPasswordModalOpen(true)}
+            className="border border-slate-300 hover:border-slate-400 text-slate-700 font-bold py-2 px-5 rounded-xl text-sm bg-white shadow-sm transition-all"
+          >
             Ubah Password
           </button>
         </div>
       </div>
+
+      {/* MODAL UBAH PASSWORD */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-md p-8 animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-slate-800">Ubah Password</h3>
+              <button 
+                onClick={() => {
+                  setIsPasswordModalOpen(false);
+                  setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+                }}
+                className="text-slate-400 hover:text-slate-600 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600">Password Lama</label>
+                <input 
+                  type="password"
+                  value={passwordData.old_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, old_password: e.target.value })}
+                  placeholder="Masukkan password lama"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600">Password Baru</label>
+                <input 
+                  type="password"
+                  value={passwordData.new_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                  placeholder="Minimal 6 karakter"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600">Konfirmasi Password Baru</label>
+                <input 
+                  type="password"
+                  value={passwordData.confirm_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                  placeholder="Ulangi password baru"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button 
+                onClick={() => {
+                  setIsPasswordModalOpen(false);
+                  setPasswordData({ old_password: '', new_password: '', confirm_password: '' });
+                }}
+                disabled={isChangingPassword}
+                className="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-3 px-6 rounded-xl transition text-sm"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handlePasswordChangeSubmit}
+                disabled={isChangingPassword}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md shadow-blue-500/20 transition text-sm disabled:opacity-50"
+              >
+                {isChangingPassword ? 'Memproses...' : 'Ubah Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

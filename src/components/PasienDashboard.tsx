@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import StatCard from './StatCard';
 
 export default function PasienDashboard({ userData }: { userData: any }) {
-  const userName = userData?.profile?.name || userData?.name || 'Pasien';
+  const userName = userData?.patient_profile?.name || userData?.profile?.name || userData?.name || 'Pasien';
   const [summary, setSummary] = useState<any>(null);
   const [lastScan, setLastScan] = useState<any>(null);
 
@@ -78,7 +78,7 @@ export default function PasienDashboard({ userData }: { userData: any }) {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="animate-fade-in-up delay-100"><StatCard icon="📋" title="Total Pemeriksaan" value={summary?.total_scans || 0} sub="Keseluruhan scan" color="blue" /></div>
+        <div className="animate-fade-in-up delay-100"><StatCard icon={<img src="/icons/totalPemeriksaan.svg" alt="Total Pemeriksaan" className="w-6 h-6 object-contain" />} title="Total Pemeriksaan" value={summary?.total_scans || 0} sub="Keseluruhan scan" color="blue" /></div>
         <div className="animate-fade-in-up delay-200"><StatCard icon="❤️" title="Terverifikasi" value={summary?.verified_count || 0} sub="Sudah diverifikasi dokter" color="red" /></div>
         <div className="animate-fade-in-up delay-300"><StatCard icon="🧠" title="AI Confidence" value={`${summary?.avg_confidence || 0}%`} sub="Rata-rata akurasi" color="green" /></div>
         <div className="animate-fade-in-up delay-400"><StatCard icon="🛡️" title="Pending" value={summary?.pending_count || 0} sub="Menunggu verifikasi" color="orange" /></div>

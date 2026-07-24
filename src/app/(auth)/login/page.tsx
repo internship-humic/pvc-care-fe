@@ -99,7 +99,7 @@ export default function LoginPage() {
 
         <div className="relative h-[70%] w-full flex items-end justify-center">
           <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[120%] aspect-square rounded-full border-[20px] border-white/10 z-0"></div>
-          <img src="https://placehold.co/800x600/transparent/white?text=Gambar+3+Dokter" alt="Doctors" className="relative z-10 object-cover w-[90%] h-auto" />
+          <img src="login_doctor.png" alt="Doctors" className="relative z-10 object-cover w-[90%] h-auto" />
 
           {/* Kartu Animasi Statis */}
           <div className="absolute top-1/4 left-10 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 text-white shadow-xl animate-fade-in-up">

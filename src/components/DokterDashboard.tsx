@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import StatCard from './StatCard';
 
 export default function DokterDashboard({ userData }: { userData: any }) {
-  const doctorName = userData?.profile?.name || userData?.name || 'Dokter';
+  const doctorName = userData?.doctor_profile?.name || userData?.profile?.name || userData?.name || 'Dokter';
   const verificationStatus = userData?.doctor_profile?.verification_status || userData?.profile?.verification_status || 'Pending';
   const isVerified = verificationStatus === 'Verified';
 

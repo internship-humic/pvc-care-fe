@@ -40,7 +40,7 @@ export default function DeteksiPage() {
     const fetchDoctors = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8000/api/doctor-profile', {
+        const response = await fetch('http://localhost:8000/api/doctor-profile/public', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -50,11 +50,13 @@ export default function DeteksiPage() {
           const verifiedDoctors = resData.data.filter((d: any) => d.verification_status === "Verified");
           const mapped = verifiedDoctors.map((d: any) => ({
             id: d.id,
-            name: d.user?.name || 'Dokter',
-            spec: 'Cardiology Specialist',
+            name: d.name || 'Dokter',
+            spec: d.specialization || 'Cardiology Specialist',
             rating: 4.9,
             patients: Math.floor(Math.random() * 500) + 100,
-            img: d.profile_photo ? `http://localhost:8000${d.profile_photo}` : `https://placehold.co/100x100/e2e8f0/64748b?text=DR`
+            img: d.profile_photo 
+              ? (d.profile_photo.startsWith('/') ? `http://localhost:8000${d.profile_photo}` : `http://localhost:8000/images/${d.profile_photo}`)
+              : `https://placehold.co/100x100/e2e8f0/64748b?text=DR`
           }));
           setDoctorsList(mapped);
         }
@@ -251,20 +253,20 @@ export default function DeteksiPage() {
               {/* Fitur Badges */}
               <div className="grid grid-cols-3 gap-4 w-full mt-8">
                 <div className="bg-slate-100/70 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                   <span className="text-2xl mb-1">🧠</span>
+                    <img src="/streamline_artificial-intelligence-spark.png" alt="Fast" className="w-6 h-6 mb-1 object-contain" />
                    <p className="text-xs font-bold text-blue-600">AI Analysis</p>
                    <p className="text-[10px] text-slate-500">93% Accuracy</p>
                 </div>
                 <div className="bg-slate-100/70 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                   <span className="text-2xl mb-1">🔒</span>
+                    <img src="/mdi_encryption-secure-outline.png" alt="Fast" className="w-6 h-6 mb-1 object-contain" />
                    <p className="text-xs font-bold text-blue-600">Secure</p>
                    <p className="text-[10px] text-slate-500">Encrypted Data</p>
                 </div>
                 <div className="bg-slate-100/70 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                   <span className="text-2xl mb-1">⏱️</span>
-                   <p className="text-xs font-bold text-blue-600">Fast</p>
-                   <p className="text-[10px] text-slate-500">&lt;1 Minute</p>
-                </div>
+                    <img src="/mdi_clock-fast.png" alt="Fast" className="w-8 h-8 mb-1 object-contain" />
+                    <p className="text-xs font-bold text-blue-600">Fast</p>
+                    <p className="text-[10px] text-slate-500">&lt;1 Minute</p>
+                 </div>
               </div>
             </div>
           </div>

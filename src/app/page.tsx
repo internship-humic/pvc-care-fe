@@ -182,9 +182,7 @@ export default function LandingPage() {
                 title: 'AI Analysis',
                 desc: 'Analisis PVC otomatis menggunakan deep learning dengan akurasi tinggi',
                 icon: (
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                  <img src="/streamline_artificial-intelligence-spark.png" alt="Fast" className="w-8 h-8 mb-1 object-contain" />
                 )
               },
               {
