@@ -3,17 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function KelolaDokterPage() {
   const router = useRouter();
+  const { userData, loading: authLoading, token } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<any>(null);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
 
   const fetchDoctors = async () => {
     try {
-      const token = localStorage.getItem('token');
+      if (!token) return;
       const res = await fetch('http://localhost:8000/api/doctor-profile', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -29,25 +30,20 @@ export default function KelolaDokterPage() {
   };
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-
-    if (!token || !userStr) {
+    if (authLoading) return;
+    if (!userData) {
       router.push('/login');
       return;
     }
 
-    const parsedUser = JSON.parse(userStr);
-    setUserData(parsedUser);
-
-    const roleValue = String(parsedUser?.role || parsedUser?.user_role || parsedUser?.type || '').toLowerCase();
+    const roleValue = String(userData?.role || userData?.user_role || userData?.type || '').toLowerCase();
     if (roleValue !== 'admin') {
       router.push('/dashboard');
       return;
     }
 
     fetchDoctors().finally(() => setIsLoading(false));
-  }, [router]);
+  }, [router, userData, authLoading, token]);
 
   const handleVerify = async (id: string, status: 'Verified' | 'Declined') => {
     setIsSubmitting(id);
@@ -73,7 +69,7 @@ export default function KelolaDokterPage() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50">Loading Kelola Dokter...</div>;
   }
 

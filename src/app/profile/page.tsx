@@ -3,24 +3,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [userData, setUserData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { userData, loading: authLoading, refreshUser } = useAuth();
 
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      router.push('/login');
-    } else {
-      setUserData(JSON.parse(userStr));
-      setIsLoading(false);
-    }
-  }, [router]);
-
-  if (isLoading) {
+  if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50">Memuat Profil...</div>;
+  }
+
+  if (!userData) {
+    return null;
   }
 
   const roleValue = String(userData?.role || userData?.user_role || userData?.type || '').toLowerCase();
@@ -45,7 +39,11 @@ export default function ProfilePage() {
 
       {/* ==================== KONTEN UTAMA ==================== */}
       <main className="max-w-5xl mx-auto px-6 py-10 animate-fade-in-up">
-        {isDoctor ? <DoctorProfile userData={userData} /> : <PatientProfile userData={userData} />}
+        {isDoctor ? (
+          <DoctorProfile userData={userData} refreshUser={refreshUser} />
+        ) : (
+          <PatientProfile userData={userData} refreshUser={refreshUser} />
+        )}
       </main>
 
     </div>
@@ -55,7 +53,7 @@ export default function ProfilePage() {
 // ============================================================================
 // KOMPONEN: PROFIL PASIEN
 // ============================================================================
-function PatientProfile({ userData }: { userData: any }) {
+function PatientProfile({ userData, refreshUser }: { userData: any; refreshUser: () => Promise<any> }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -155,10 +153,9 @@ function PatientProfile({ userData }: { userData: any }) {
           updatedUser.profile = data.data;
         }
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        
+        await refreshUser();
         setIsEditing(false);
         alert('Profil berhasil diperbarui!');
-        window.location.reload(); // Reload to reflect changes globally
       } else {
         alert('Gagal memperbarui profil: ' + (data.message || 'Error'));
       }
@@ -248,7 +245,9 @@ function PatientProfile({ userData }: { userData: any }) {
               />
             ) : (
               <div className="flex items-center border border-slate-200 rounded-xl px-4 py-3 bg-slate-50/50">
-                <span className="text-slate-400 mr-3">👤</span>
+                <svg className="w-5 h-5 text-slate-400 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
                 <span className="text-slate-800 font-medium">{formData.name}</span>
               </div>
             )}
@@ -257,7 +256,9 @@ function PatientProfile({ userData }: { userData: any }) {
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-600">Email (Tidak dapat diubah)</label>
             <div className="flex items-center border border-slate-200 rounded-xl px-4 py-3 bg-slate-100/50">
-              <span className="text-slate-400 mr-3">✉️</span>
+              <svg className="w-5 h-5 text-slate-400 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
               <span className="text-slate-500 font-medium">{email}</span>
             </div>
           </div>
@@ -274,7 +275,9 @@ function PatientProfile({ userData }: { userData: any }) {
               />
             ) : (
               <div className="flex items-center border border-slate-200 rounded-xl px-4 py-3 bg-slate-50/50">
-                <span className="text-slate-400 mr-3">📞</span>
+                <svg className="w-5 h-5 text-slate-400 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
                 <span className="text-slate-800 font-medium">{formData.phone || '-'}</span>
               </div>
             )}
@@ -313,7 +316,9 @@ function PatientProfile({ userData }: { userData: any }) {
                 />
               ) : (
                 <div className="flex items-center border border-slate-200 rounded-xl px-4 py-3 bg-slate-50/50">
-                  <span className="text-slate-400 mr-3">📅</span>
+                  <svg className="w-5 h-5 text-slate-400 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                   <span className="text-slate-800 font-medium">{birthDateDisplay}</span>
                 </div>
               )}
@@ -328,7 +333,9 @@ function PatientProfile({ userData }: { userData: any }) {
         <div className="flex items-center justify-between border border-slate-200 rounded-2xl p-4 bg-slate-50/50">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 text-xl">
-              🔒
+              <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
             </div>
             <div>
               <p className="font-bold text-slate-800">Password</p>
@@ -426,7 +433,7 @@ function PatientProfile({ userData }: { userData: any }) {
 // ============================================================================
 // KOMPONEN: PROFIL DOKTER
 // ============================================================================
-function DoctorProfile({ userData }: { userData: any }) {
+function DoctorProfile({ userData, refreshUser }: { userData: any; refreshUser: () => Promise<any> }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -489,10 +496,9 @@ function DoctorProfile({ userData }: { userData: any }) {
           updatedUser.profile = data.data;
         }
         localStorage.setItem('user', JSON.stringify(updatedUser));
-        
+        await refreshUser();
         setIsEditing(false);
         alert('Profil dokter berhasil diperbarui!');
-        window.location.reload();
       } else {
         alert('Gagal memperbarui profil: ' + (data.message || 'Error'));
       }
@@ -569,7 +575,11 @@ function DoctorProfile({ userData }: { userData: any }) {
               <img src={profilePhoto.startsWith('/images') ? `http://localhost:8000${profilePhoto}` : profilePhoto} alt="Doctor" className="w-full h-auto aspect-[3/4] object-cover rounded-3xl border border-slate-100 shadow-sm" />
               {isEditing && (
                 <label className="absolute top-4 right-4 text-xs font-bold text-slate-700 bg-white shadow-lg px-4 py-2 rounded-full hover:bg-slate-50 transition cursor-pointer flex items-center gap-2">
-                  <span>📸 Ubah Foto</span>
+                  <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <circle cx="12" cy="13" r="3" />
+                  </svg>
+                  <span>Ubah Foto</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </label>
               )}
@@ -639,8 +649,10 @@ function DoctorProfile({ userData }: { userData: any }) {
           {/* Kontak Baris Bawah */}
           <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-4">
             <div className="flex-1 flex items-center gap-3 border-[1.5px] border-blue-400 rounded-2xl p-4 shadow-sm shadow-blue-100 bg-blue-50/20">
-              <div className="w-12 h-12 rounded-full border border-blue-200 bg-blue-50 text-blue-500 flex items-center justify-center text-xl shrink-0">
-                ✉️
+              <div className="w-12 h-12 rounded-full border border-blue-200 bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
               </div>
               <div className="overflow-hidden w-full">
                 <p className="text-[11px] text-slate-500 font-medium">Email (Read-only)</p>
@@ -649,8 +661,10 @@ function DoctorProfile({ userData }: { userData: any }) {
             </div>
             
             <div className="flex-1 flex items-center gap-3 border-[1.5px] border-blue-400 rounded-2xl p-4 shadow-sm shadow-blue-100 bg-blue-50/20">
-              <div className="w-12 h-12 rounded-full border border-blue-200 bg-blue-50 text-blue-500 flex items-center justify-center text-xl shrink-0">
-                📞
+              <div className="w-12 h-12 rounded-full border border-blue-200 bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
               </div>
               <div className="overflow-hidden w-full">
                 <p className="text-[11px] text-slate-500 font-medium">Nomor Telepon</p>
@@ -675,8 +689,10 @@ function DoctorProfile({ userData }: { userData: any }) {
         <div className="w-full lg:w-72 flex flex-col gap-4">
           
           <div className="bg-[#D1E0F5] border border-blue-200 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm hover:-translate-y-1 transition-transform cursor-default">
-            <div className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl shadow-inner border-2 border-blue-300">
-              👥
+            <div className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-inner border-2 border-blue-300">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
             </div>
             <div>
               <p className="text-xs font-bold text-slate-600">Total Pasien</p>
@@ -685,8 +701,10 @@ function DoctorProfile({ userData }: { userData: any }) {
           </div>
 
           <div className="bg-[#D4EEDC] border border-green-200 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm hover:-translate-y-1 transition-transform cursor-default">
-            <div className="w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl shadow-inner border-2 border-green-300">
-              ✓
+            <div className="w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center shadow-inner border-2 border-green-300">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
             <div>
               <p className="text-xs font-bold text-slate-600">Verifikasi Selesai</p>
@@ -695,8 +713,10 @@ function DoctorProfile({ userData }: { userData: any }) {
           </div>
 
           <div className="bg-[#FBEED1] border border-orange-200 rounded-[2rem] p-5 flex items-center gap-4 shadow-sm hover:-translate-y-1 transition-transform cursor-default">
-            <div className="w-14 h-14 bg-orange-400 text-white rounded-full flex items-center justify-center text-2xl shadow-inner border-2 border-orange-200">
-              ⭐
+            <div className="w-14 h-14 bg-orange-400 text-white rounded-full flex items-center justify-center shadow-inner border-2 border-orange-200">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
             </div>
             <div>
               <p className="text-xs font-bold text-slate-600">Rating</p>

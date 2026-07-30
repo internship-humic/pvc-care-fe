@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 // Import komponen yang sudah dipisah
 import AdminDashboard from '../../components/AdminDashboard';
@@ -11,37 +10,19 @@ import DokterDashboard from '../../components/DokterDashboard';
 import PasienDashboard from '../../components/PasienDashboard';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<any>(null);
+  const { userData, loading } = useAuth();
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const userStr = localStorage.getItem('user');
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 space-y-3">
+        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-slate-500 text-sm font-semibold">Memuat dashboard...</p>
+      </div>
+    );
+  }
 
-        if (!token) {
-          router.push('/login');
-          return;
-        }
-
-        if (userStr) {
-          setUserData(JSON.parse(userStr));
-        }
-
-      } catch (error) {
-        console.error("Error fetching dashboard:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [router]);
-
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50">Loading Dashboard...</div>;
+  if (!userData) {
+    return null;
   }
 
   // --- DETEKSI 3 ROLE BERBEDA ---

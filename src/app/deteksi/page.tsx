@@ -4,14 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 // --- DATA DOKTER DIAMBIL DARI API ---
 
 export default function DeteksiPage() {
   const router = useRouter();
-  
-  // State User (Untuk Navbar)
-  const [userData, setUserData] = useState<any>(null);
+  const { userData, loading } = useAuth();
 
   // State Alur Halaman (1: Upload, 2: Loading, 3: Hasil, 4: Sukses)
   const [step, setStep] = useState(1);
@@ -27,14 +26,14 @@ export default function DeteksiPage() {
   const [doctorsList, setDoctorsList] = useState<any[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [scanId, setScanId] = useState<string | null>(null);
+  const [uploadedDocumentUrl, setUploadedDocumentUrl] = useState<string | null>(null);
 
-  // --- AMBIL DATA USER UNTUK NAVBAR ---
+  // --- AMBIL DATA DOKTER ---
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    if (loading) return;
+    if (!userData) {
       router.push('/login');
-    } else {
-      setUserData(JSON.parse(userStr));
+      return;
     }
 
     const fetchDoctors = async () => {
@@ -65,7 +64,16 @@ export default function DeteksiPage() {
       }
     };
     fetchDoctors();
-  }, [router]);
+  }, [router, userData, loading]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 space-y-3">
+        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-slate-500 text-sm font-semibold">Memuat...</p>
+      </div>
+    );
+  }
 
   // --- FUNGSI DRAG & DROP ---
   const handleDragOver = (e: React.DragEvent) => {
@@ -102,6 +110,7 @@ export default function DeteksiPage() {
       const data = await response.json();
       if (response.ok && data.data) {
         setScanId(data.data.id);
+        setUploadedDocumentUrl(data.data.document_url);
       } else {
         alert("Gagal mengunggah scan: " + (data.message || "Unknown error"));
         setStep(1);
@@ -207,7 +216,12 @@ export default function DeteksiPage() {
           )}
           {(step === 3 || step === 4) && (
             <>
-              <h2 className="text-xl font-medium text-slate-500 flex items-center gap-2">Analisis selesai <span className="text-red-500">❤️</span></h2>
+              <h2 className="text-xl font-medium text-slate-500 flex items-center gap-2">
+                Analisis selesai 
+                <svg className="w-5 h-5 text-red-500 inline-block align-middle fill-red-500" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </h2>
               <h1 className="text-3xl font-extrabold text-slate-900 mt-1">Verifikasi Hasil ke Dokter Anda</h1>
             </>
           )}
@@ -230,7 +244,11 @@ export default function DeteksiPage() {
               >
                 {file ? (
                   <div className="text-center">
-                    <div className="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">✅</div>
+                    <div className="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner border border-green-200">
+                      <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                     <p className="font-bold text-slate-800">{file.name}</p>
                     <p className="text-xs text-slate-500 mt-1">{(file.size / 1024).toFixed(1)} KB • Siap dianalisis</p>
                     <button onClick={handleStartAnalysis} className="mt-6 px-8 py-2.5 bg-[#4880FF] hover:bg-blue-600 text-white font-bold rounded-full shadow-md transition-all">
@@ -275,8 +293,10 @@ export default function DeteksiPage() {
         {/* --- STEP 2: LOADING ANALISIS --- */}
         {step === 2 && (
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 p-16 flex flex-col items-center justify-center animate-fade-in-up">
-            <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white text-4xl shadow-xl shadow-blue-500/30 mb-8 animate-pulse">
-              🧠
+            <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-blue-500/30 mb-8 animate-pulse border border-blue-400">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
             </div>
             <h3 className="text-2xl font-bold text-slate-800">Menganalisis Data ECG...</h3>
             <p className="text-slate-500 mt-2 mb-10 text-center">AI sedang memproses data ECG Anda untuk mendeteksi PVC</p>
@@ -292,15 +312,27 @@ export default function DeteksiPage() {
             {/* Checklist Indikator */}
             <div className="w-full max-w-md space-y-3">
               <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${progress > 10 ? 'bg-green-100 text-green-600' : 'border-2 border-slate-200 text-transparent'}`}>✓</div>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${progress > 10 ? 'bg-green-100 border-green-200 text-green-600' : 'border-slate-200 text-transparent'}`}>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
                 <span className={`text-sm ${progress > 10 ? 'text-slate-800' : 'text-slate-400'}`}>Validating ECG data format</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${progress > 40 ? 'bg-green-100 text-green-600' : 'border-2 border-slate-200 text-transparent'}`}>✓</div>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${progress > 40 ? 'bg-green-100 border-green-200 text-green-600' : 'border-slate-200 text-transparent'}`}>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
                 <span className={`text-sm ${progress > 40 ? 'text-slate-800' : 'text-slate-400'}`}>Preprocessing signal data</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${progress > 80 ? 'bg-green-100 text-green-600' : 'border-2 border-slate-200 text-transparent'}`}>✓</div>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${progress > 80 ? 'bg-green-100 border-green-200 text-green-600' : 'border-slate-200 text-transparent'}`}>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
                 <span className={`text-sm ${progress > 80 ? 'text-slate-800' : 'text-slate-400'}`}>Running AI detection model...</span>
               </div>
             </div>
@@ -313,7 +345,11 @@ export default function DeteksiPage() {
             {/* Kartu Hasil Analisis */}
             <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 p-8">
               <div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-6">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl shadow-md shadow-green-500/30">✓</div>
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white shadow-md shadow-green-500/30 border border-green-400 shrink-0">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">Analisis AI Telah Selesai</h3>
                   <p className="text-sm text-slate-500">Data ECG Anda telah berhasil dianalisis. Berikut hasil deteksi PVC.</p>
@@ -339,17 +375,27 @@ export default function DeteksiPage() {
                 </div>
               </div>
 
-              {/* Waveform Placeholder */}
+              {/* Waveform Placeholder / Live ECG Upload */}
               <div className="border border-slate-100 rounded-2xl p-6 mb-6">
                 <h4 className="text-sm font-bold text-slate-800 mb-4">ECG Waveform - PVC Detection Visualization</h4>
-                <div className="w-full h-32 flex items-center justify-center relative">
-                  <svg className="w-full h-full text-blue-400" viewBox="0 0 500 100" preserveAspectRatio="none">
-                    <polyline fill="none" stroke="currentColor" strokeWidth="2" points="0,50 50,50 60,30 70,70 80,50 150,50 160,20 170,80 180,50 250,50 260,10 270,90 280,50 350,50 360,30 370,70 380,50 450,50 460,20 470,80 480,50 500,50" />
-                    <circle cx="160" cy="20" r="4" fill="#ef4444" />
-                    <circle cx="260" cy="10" r="4" fill="#ef4444" />
-                    <circle cx="460" cy="20" r="4" fill="#ef4444" />
-                  </svg>
-                </div>
+                {uploadedDocumentUrl ? (
+                  <div className="w-full h-64 flex items-center justify-center relative overflow-hidden rounded-xl bg-slate-50 border border-slate-100">
+                    <img 
+                      src={`http://localhost:8000${uploadedDocumentUrl}`} 
+                      alt="Hasil Deteksi ECG" 
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-32 flex items-center justify-center relative">
+                    <svg className="w-full h-full text-blue-400" viewBox="0 0 500 100" preserveAspectRatio="none">
+                      <polyline fill="none" stroke="currentColor" strokeWidth="2" points="0,50 50,50 60,30 70,70 80,50 150,50 160,20 170,80 180,50 250,50 260,10 270,90 280,50 350,50 360,30 370,70 380,50 450,50 460,20 470,80 480,50 500,50" />
+                      <circle cx="160" cy="20" r="4" fill="#ef4444" />
+                      <circle cx="260" cy="10" r="4" fill="#ef4444" />
+                      <circle cx="460" cy="20" r="4" fill="#ef4444" />
+                    </svg>
+                  </div>
+                )}
                 <div className="flex items-center gap-6 mt-4">
                   <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span><span className="text-xs text-slate-500">Normal Rhythm</span></div>
                   <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span><span className="text-xs text-slate-500">PVC Detected</span></div>
@@ -388,9 +434,15 @@ export default function DeteksiPage() {
                     </div>
                     <p className="text-sm text-slate-500">{selectedDoctorDetail.spec}</p>
                     <p className="text-sm font-medium text-slate-600 mt-2 flex items-center gap-1.5">
-                      <span className="text-orange-400 text-base">★</span> {selectedDoctorDetail.rating} 
+                      <svg className="w-4 h-4 text-amber-400 fill-amber-400 inline-block align-middle" viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                      </svg>
+                      {selectedDoctorDetail.rating} 
                       <span className="text-slate-300 mx-2">|</span> 
-                      <span className="text-blue-500">👤</span> {selectedDoctorDetail.patients} pasien
+                      <svg className="w-4 h-4 text-blue-500 inline-block align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                      {selectedDoctorDetail.patients} pasien
                     </p>
                   </div>
                 </div>
@@ -414,8 +466,10 @@ export default function DeteksiPage() {
             <button onClick={() => router.push('/dashboard')} className="absolute top-6 right-6 border border-slate-200 hover:border-blue-400 text-slate-600 hover:text-blue-600 text-xs font-bold py-2 px-4 rounded-full transition-all">
               Kembali ke dashboard
             </button>
-            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white text-4xl shadow-xl shadow-green-500/30 mb-8 mt-4">
-              ✓
+            <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white shadow-xl shadow-green-500/30 mb-8 mt-4 border-2 border-green-300">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
             <h3 className="text-2xl font-bold text-slate-800">Hasil telah dikirim ke dokter</h3>
             <p className="text-slate-500 mt-2 text-center">Silahkan tunggu verifikasi dan catatan dari {selectedDoctorDetail?.name}</p>

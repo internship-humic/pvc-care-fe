@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 const getInitials = (name: string) => {
   if (!name) return "";
@@ -38,7 +40,7 @@ const formatLastVisit = (dateStr: string) => {
 
 export default function PasienPage() {
   const router = useRouter();
-  const [userData, setUserData] = useState<any>(null);
+  const { userData, loading: authLoading, token } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   
   // State untuk Fitur Search & Patients
@@ -47,18 +49,14 @@ export default function PasienPage() {
   const [loadingPatients, setLoadingPatients] = useState(true);
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (!token || !userStr) {
+    if (authLoading) return;
+    if (!userData) {
       router.push('/login');
       return;
     }
 
-    const parsedUser = JSON.parse(userStr);
-    setUserData(parsedUser);
-    
     // Keamanan Ekstra: Jika bukan dokter, tendang ke dashboard pasien
-    const roleValue = String(parsedUser?.role || parsedUser?.user_role || parsedUser?.type || '').toLowerCase();
+    const roleValue = String(userData?.role || userData?.user_role || userData?.type || '').toLowerCase();
     const isDoctor = roleValue.includes('doctor') || roleValue.includes('dokter');
     if (!isDoctor) {
       router.push('/dashboard');
@@ -66,7 +64,7 @@ export default function PasienPage() {
     }
     
     setIsLoading(false);
-  }, [router]);
+  }, [router, userData, authLoading]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -96,7 +94,11 @@ export default function PasienPage() {
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, isLoading]);
+  }, [searchQuery, isLoading, token]);
+
+  if (authLoading || isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans">Memuat data...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 pb-20">
@@ -201,7 +203,9 @@ export default function PasienPage() {
             ) : (
               // Empty State jika pencarian tidak ditemukan
               <div className="py-16 text-center">
-                <div className="text-5xl mb-4">🔍</div>
+                <div className="flex justify-center mb-4">
+                  <Image src="/icons/VectorSearchHitam.svg" alt="Search" width={48} height={48} className="brightness-0" />
+                </div>
                 <h3 className="text-lg font-bold text-slate-800">Pasien tidak ditemukan</h3>
                 <p className="text-sm text-slate-500 mt-1">Belum ada data pasien atau coba gunakan kata kunci lain.</p>
               </div>

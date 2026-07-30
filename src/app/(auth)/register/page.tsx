@@ -153,14 +153,18 @@ export default function RegisterPage() {
           <img src="login_doctor.png" alt="Doctors" className="relative z-10 object-cover w-[90%] h-auto" />
 
           <div className={`absolute top-[30%] left-10 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 text-white shadow-xl transition-all duration-500 ease-out transform ${role === 'pasien' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12 pointer-events-none'}`}>
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">🔍</div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center">
+              <img src="/icons/VectorSearch.svg" alt="Search" className="w-6 h-6 object-contain" />
+            </div>
             <div>
               <p className="font-semibold text-sm leading-none">Well qualified doctors</p>
               <p className="text-xs text-slate-300 mt-1">Dengan dokter professional</p>
             </div>
           </div>
           <div className={`absolute bottom-24 right-10 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 text-white shadow-xl transition-all duration-500 ease-out delay-100 transform ${role === 'pasien' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg">📈</div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center">
+              <img src="/icons/activityPutih.svg" alt="activityPutih" className="w-8 h-8 object-contain" />
+            </div>
             <div>
               <p className="font-semibold text-sm leading-none">AI Detection</p>
               <p className="text-xs text-slate-300 mt-1">Deteksi hasil dengan AI</p>
@@ -168,7 +172,9 @@ export default function RegisterPage() {
           </div>
 
           <div className={`absolute bottom-24 left-16 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-5 rounded-2xl flex items-center gap-4 text-white shadow-xl transition-all duration-500 ease-out transform ${role === 'dokter' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl">🏥</div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center">
+              <img src="/icons/VectorPlus.svg" alt="VectorPlus" className="w-8 h-8 object-contain" />
+            </div>
             <div>
               <p className="font-bold text-base leading-none">Dokter Professional</p>
               <p className="text-sm text-slate-300 mt-1">Bergabunglah dengan kami!</p>
@@ -357,21 +363,6 @@ export default function RegisterPage() {
                 </p>
               )}
             </div>
-
-            {/* {role === 'pasien' && (
-              <div className="pt-4">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="flex-1 h-px bg-slate-100"></div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Or sign up with</span>
-                  <div className="flex-1 h-px bg-slate-100"></div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <button type="button" className="flex justify-center items-center py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm"><span className="text-xl">G</span></button>
-                  <button type="button" className="flex justify-center items-center py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm text-blue-600 font-bold">f</button>
-                  <button type="button" className="flex justify-center items-center py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm text-black text-xl"></button>
-                </div>
-              </div>
-            )} */}
           </form>
 
         </div>

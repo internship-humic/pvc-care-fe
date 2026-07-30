@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 // --- HELPER FORMAT WAKTU RELATIF ---
 const formatRelativeTime = (dateString: string) => {
@@ -81,8 +82,8 @@ const getNotificationIcon = (type: string) => {
 
 export default function NotifikasiPage() {
   const router = useRouter();
+  const { userData, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
 
   // --- AMBIL DATA NOTIFIKASI DARI API ---
@@ -106,20 +107,19 @@ export default function NotifikasiPage() {
 
   // --- CEK AUTENTIKASI ---
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-
-    if (!token) {
+    if (authLoading) return;
+    if (!userData) {
       router.push('/login');
       return;
     }
 
-    if (userStr) {
-      setUserData(JSON.parse(userStr));
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchNotifications(token);
+    } else {
+      setIsLoading(false);
     }
-    
-    fetchNotifications(token);
-  }, [router]);
+  }, [router, userData, authLoading]);
 
   // --- FUNGSI TANDAI SEMUA DIBACA ---
   const handleMarkAllAsRead = async () => {
@@ -187,7 +187,7 @@ export default function NotifikasiPage() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50">Memuat Notifikasi...</div>;
   }
 

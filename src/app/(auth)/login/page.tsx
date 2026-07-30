@@ -103,7 +103,9 @@ export default function LoginPage() {
 
           {/* Kartu Animasi Statis */}
           <div className="absolute top-1/4 left-10 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 text-white shadow-xl animate-fade-in-up">
-            <div className="text-2xl">🔍</div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center">
+              <img src="/icons/VectorSearchPutih.svg" alt="Search" className="w-6 h-6 object-contain" />
+            </div>
             <div>
               <p className="font-semibold text-sm">Well qualified doctors</p>
               <p className="text-xs text-slate-300">Dengan dokter professional</p>
@@ -111,7 +113,9 @@ export default function LoginPage() {
           </div>
           
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 text-white shadow-xl animate-fade-in-up" style={{ animationDelay: '150ms' }}>
-            <div className="text-2xl">📈</div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center">
+              <img src="/icons/activityPutih.svg" alt="activityPutih" className="w-8 h-8 object-contain" />
+            </div>
             <div>
               <p className="font-semibold text-sm">AI Detection</p>
               <p className="text-xs text-slate-300">Deteksi hasil dengan AI</p>

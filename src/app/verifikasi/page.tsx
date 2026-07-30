@@ -4,10 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function VerifikasiPage() {
   const router = useRouter();
-  const [userData, setUserData] = useState<any>(null);
+  const { userData, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   // Referensi untuk elemen Canvas grafik ECG
@@ -24,25 +25,22 @@ export default function VerifikasiPage() {
 
   // --- AMBIL DATA USER ---
   useEffect(() => {
+    if (authLoading) return;
+    if (!userData) {
+      router.push('/login');
+      return;
+    }
+    
+    const roleValue = String(userData?.role || userData?.user_role || userData?.type || '').toLowerCase();
+    const isDoctor = roleValue.includes('doctor') || roleValue.includes('dokter');
+    if (!isDoctor) {
+      router.push('/dashboard');
+      return;
+    }
+    
     const fetchInitialData = async () => {
-      const userStr = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
-      if (!userStr || !token) {
-        router.push('/login');
-        return;
-      }
-      
-      const parsedUser = JSON.parse(userStr);
-      setUserData(parsedUser);
-      
-      const roleValue = String(parsedUser?.role || parsedUser?.user_role || parsedUser?.type || '').toLowerCase();
-      const isDoctor = roleValue.includes('doctor') || roleValue.includes('dokter');
-      if (!isDoctor) {
-        router.push('/dashboard');
-        return;
-      }
-      
       try {
+        const token = localStorage.getItem('token');
         const res = await fetch('http://localhost:8000/api/pvc-scans/history?status=Pending', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -62,7 +60,7 @@ export default function VerifikasiPage() {
     };
     
     fetchInitialData();
-  }, [router]);
+  }, [router, userData, authLoading]);
 
   // --- LOGIKA MENGGAMBAR GRAFIK ECG (Diterjemahkan ke React) ---
   useEffect(() => {
@@ -164,7 +162,7 @@ export default function VerifikasiPage() {
     };
   }, [isLoading]);
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Memuat Meja Kerja...</div>;
+  if (authLoading || isLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Memuat Meja Kerja...</div>;
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900 pb-20">
       

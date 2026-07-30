@@ -3,16 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function KelolaPasienPage() {
   const router = useRouter();
+  const { userData, loading: authLoading, token } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<any>(null);
   const [patients, setPatients] = useState<any[]>([]);
 
   const fetchPatients = async () => {
     try {
-      const token = localStorage.getItem('token');
+      if (!token) return;
       const res = await fetch('http://localhost:8000/api/patient-profile', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -28,25 +29,20 @@ export default function KelolaPasienPage() {
   };
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-
-    if (!token || !userStr) {
+    if (authLoading) return;
+    if (!userData) {
       router.push('/login');
       return;
     }
 
-    const parsedUser = JSON.parse(userStr);
-    setUserData(parsedUser);
-
-    const roleValue = String(parsedUser?.role || parsedUser?.user_role || parsedUser?.type || '').toLowerCase();
+    const roleValue = String(userData?.role || userData?.user_role || userData?.type || '').toLowerCase();
     if (roleValue !== 'admin') {
       router.push('/dashboard');
       return;
     }
 
     fetchPatients().finally(() => setIsLoading(false));
-  }, [router]);
+  }, [router, userData, authLoading, token]);
 
   const calculateAge = (birthdateStr: string) => {
     if (!birthdateStr) return '-';
@@ -60,7 +56,7 @@ export default function KelolaPasienPage() {
     return `${age} tahun`;
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50">Loading Kelola Pasien...</div>;
   }
 

@@ -3,18 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
-export default function Navbar({ userData }: { userData: any }) {
+export default function Navbar({ userData: propUserData }: { userData?: any }) {
   const router = useRouter();
   const pathname = usePathname(); // Mendeteksi URL saat ini
+  const { userData: contextUserData, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/login');
-  };
+  const userData = propUserData || contextUserData;
+  const handleLogout = logout;
 
   // --- DETEKSI ROLE ---
   const roleValue = String(userData?.role || userData?.user_role || userData?.type || '').toLowerCase();
@@ -22,7 +21,7 @@ export default function Navbar({ userData }: { userData: any }) {
   const isDoctor = roleValue.includes('doctor') || roleValue.includes('dokter');
   const isPatient = !isAdmin && !isDoctor;
 
-  const userInitials = isAdmin ? 'A' : (userData?.profile?.name?.charAt(0) || userData?.name?.charAt(0) || 'U');
+  const userInitials = isAdmin ? 'A' : (userData?.patient_profile?.name?.charAt(0) || userData?.doctor_profile?.name?.charAt(0) || userData?.profile?.name?.charAt(0) || userData?.name?.charAt(0) || 'U');
   const profilePhoto = userData?.doctor_profile?.profile_photo || userData?.profile?.profile_photo;
 
   const [unreadCount, setUnreadCount] = useState(0);
@@ -226,11 +225,21 @@ export default function Navbar({ userData }: { userData: any }) {
               <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-fade-in-up">
                 {!isAdmin && (
                   <>
-                    <Link href="/profile" className="block px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition"><span className="mr-2">👤</span> Profil Saya</Link>
+                    <Link href="/profile" className="flex items-center px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition">
+                      <svg className="w-4 h-4 mr-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Profil Saya
+                    </Link>
                     <div className="h-px bg-slate-100 my-1"></div>
                   </>
                 )}
-                <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition"><span className="mr-2">🚪</span> Keluar</button>
+                <button onClick={handleLogout} className="flex items-center w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition">
+                  <svg className="w-4 h-4 mr-2.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Keluar
+                </button>
               </div>
             )}
           </div>

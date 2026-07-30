@@ -1,15 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
+import pictureDokterBG from '../../public/pictureDokterBG.png';
 
 export default function LandingPage() {
   // State untuk mengontrol FAQ mana yang terbuka
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const fetchPublicDoctors = async () => {
@@ -54,40 +70,13 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-800 font-sans antialiased overflow-x-hidden">
-      {/* BEGIN: Header */}
-      {/* <header className="fixed w-full top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+      
+      <header className="fixed w-full top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10  rounded-full flex items-center justify-center">
-                <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900">PVCare</span>
-            </div>
-            
-            <nav className="hidden md:flex space-x-8">
-              <Link href="#features" className="text-gray-600 hover:text-primary-hover font-medium transition">Features</Link>
-              <Link href="#how-it-works" className="text-gray-600 hover:text-primary-hover font-medium transition">How it Works</Link>
-              <Link href="#faq" className="text-gray-600 hover:text-primary-hover font-medium transition">FAQ</Link>
-            </nav>
-
-            <div className="flex items-center space-x-4">
-              <Link href="/login" className="text-primary font-medium px-5 py-2.5 border border-primary rounded-full hover:bg-primary/5 transition">
-                Login
-              </Link>
-              <Link href="/register" className="bg-primary text-white font-medium px-6 py-2.5 rounded-full hover:bg-primary-hover transition shadow-md shadow-primary/20">
-                Mulai
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header> */}
-<header className="fixed w-full top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10  rounded-full flex items-center justify-center">
-                <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
+                <Image src="/LogoPVC.png" alt="PVCare Logo" width={40} height={40} className="w-full h-full object-cover" />
               </div>
               <span className="text-2xl font-bold text-gray-900">PVCare</span>
             </div>
@@ -147,10 +136,11 @@ export default function LandingPage() {
               transition={{ duration: 0.7, delay: 0.4, ease: 'easeOut' }}
               className="absolute right-0 bottom-8 lg:bottom-16 top-0 z-0 flex items-center justify-end pointer-events-none"
             >
-              <img 
-                src="/pictureDokterBG.png"
+              <Image 
+                src={pictureDokterBG}
                 alt="Doctor with AI technology" 
                 className="h-full w-auto object-contain opacity-20 lg:opacity-85 max-h-[400px] lg:max-h-[550px] translate-y-8 lg:translate-y-16" 
+                priority
               />
             </motion.div>
           </div>
@@ -182,7 +172,7 @@ export default function LandingPage() {
                 title: 'AI Analysis',
                 desc: 'Analisis PVC otomatis menggunakan deep learning dengan akurasi tinggi',
                 icon: (
-                  <img src="/streamline_artificial-intelligence-spark.png" alt="Fast" className="w-8 h-8 mb-1 object-contain" />
+                  <Image src="/streamline_artificial-intelligence-spark.png" alt="Fast" width={32} height={32} className="w-8 h-8 mb-1 object-contain" />
                 )
               },
               {
@@ -298,10 +288,13 @@ export default function LandingPage() {
                     </svg>
                   </div>
                 </div>
-                <img 
+                <Image 
                   alt="Doctor holding heart" 
                   className="w-full h-auto object-cover opacity-90 hover:opacity-100 transition duration-500" 
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4cmVR9AeOMUfSCVckZ09l_v2QSyuALjHCjI6kvNX8tCAjC55rI7CUCHUtxtjUoiBt-4OZNgD2gHZKRBQi_lP3cUAxI92m7uxBeDylq0lq4EDATkbuKMm1B8i3ouHYGHPTQqTEN8kByceXHG28cH2nofFRiytHJsJ4ax0f6ZKo9vxyD3J8CVtTp8oShjhI7eMB8uPIEQa5j8oWHN-BpBXV98zL7HqyEkgY_rN1ipSWR0hAbrPfVSQmmPVpwBA23x8YhArVnZvqLjnb" 
+                  width={600}
+                  height={400}
+                  unoptimized
                 />
               </div>
             </motion.div>
@@ -332,8 +325,8 @@ export default function LandingPage() {
                 num: "25+",
                 label: "Dokter Spesialis Terverifikasi",
                 icon: (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                    <img src="maki_doctor.png" alt="maki_doctor" className="w-full h-full object-cover" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
+                    <Image src="/maki_doctor.png" alt="maki_doctor" width={32} height={32} className="w-full h-full object-cover" />
                   </div>
                 )
               },
@@ -341,8 +334,8 @@ export default function LandingPage() {
                 num: "2,500+",
                 label: "Pasien Telah Dilayani",
                 icon: (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                    <img src="activity.png" alt="activity" className="w-full h-full object-cover" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
+                    <Image src="/activity.png" alt="activity" width={32} height={32} className="w-full h-full object-cover" />
                   </div>
                 )
               },
@@ -350,8 +343,8 @@ export default function LandingPage() {
                 num: "98%",
                 label: "Tingkat Kepuasan Pengguna",
                 icon: (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                    <img src="ri_chat-smile-ai-3-line.png" alt="ri_chat-smile-ai-3-line" className="w-full h-full object-cover" />
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
+                    <Image src="/ri_chat-smile-ai-3-line.png" alt="ri_chat-smile-ai-3-line" width={32} height={32} className="w-full h-full object-cover" />
                   </div>
                 )
               }
@@ -377,18 +370,44 @@ export default function LandingPage() {
       {/* END: Trust Section */}
 
       {/* BEGIN: Our Doctors */}
-      <section className="py-20 bg-gray-50 border-t border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gray-50 border-t border-b border-gray-100 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative group">
           
-          <motion.h2 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900"
-          >
-            Dokter Kami
-          </motion.h2>
+          <div className="flex justify-between items-center mb-12">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="text-3xl md:text-4xl font-bold text-gray-900"
+            >
+              Dokter Kami
+            </motion.h2>
+
+            {/* Navigation buttons */}
+            {!loadingDoctors && doctors.length > 0 && (
+              <div className="flex gap-2">
+                <button 
+                  onClick={scrollLeft}
+                  className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-blue-600 active:scale-95 transition-all"
+                  aria-label="Scroll left"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button 
+                  onClick={scrollRight}
+                  className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-blue-600 active:scale-95 transition-all"
+                  aria-label="Scroll right"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
 
           {loadingDoctors ? (
             <div className="flex justify-center items-center py-12">
@@ -400,7 +419,11 @@ export default function LandingPage() {
               <p className="text-gray-500 font-medium font-sans">Belum ada dokter yang terverifikasi saat ini.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div 
+              ref={scrollContainerRef}
+              className="flex overflow-x-auto gap-8 pb-6 scroll-smooth snap-x snap-mandatory scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent"
+              style={{ scrollbarWidth: 'thin' }}
+            >
               {doctors.map((doc, idx) => {
                 const getDoctorImage = (photo: string) => {
                   if (!photo) return "/docter1.png";
@@ -418,12 +441,15 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-50px" }}
                     transition={{ duration: 0.5, delay: idx * 0.12, ease: "easeOut" }}
-                    className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300"
+                    className="w-[280px] md:w-[300px] flex-shrink-0 snap-start bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300"
                   >
-                    <img 
+                    <Image 
                       alt={doc.name} 
                       className="w-full h-64 object-cover object-top" 
                       src={getDoctorImage(doc.profile_photo)}
+                      width={300}
+                      height={256}
+                      unoptimized
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "/docter1.png";
                       }}
@@ -507,7 +533,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div className="flex items-center gap-3 mb-6 md:mb-0">
               <div className="w-12 h-12 rounded-full flex items-center justify-center">
-                <img src="/LogoPVC.png" alt="PVCare Logo" className="w-full h-full object-cover" />
+                <Image src="/LogoPVC.png" alt="PVCare Logo" width={48} height={48} className="w-full h-full object-cover" />
               </div>
               <div>
                 <span className="text-3xl font-bold leading-none tracking-tight">PVCare</span>
