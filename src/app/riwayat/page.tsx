@@ -13,35 +13,35 @@ export default function RiwayatPage() {
   const [scans, setScans] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
 
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const [histRes, sumRes] = await Promise.all([
+        fetch('http://localhost:8000/api/pvc-scans/history', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('http://localhost:8000/api/pvc-scans/history/summary', { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      
+      if (histRes.ok) {
+        const data = await histRes.json();
+        setScans(data.data?.data || []);
+      }
+      if (sumRes.ok) {
+        const data = await sumRes.json();
+        setSummary(data.data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading) return;
     if (!userData) {
       router.push('/login');
       return;
     } 
-
-    const fetchHistory = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const [histRes, sumRes] = await Promise.all([
-          fetch('http://localhost:8000/api/pvc-scans/history', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('http://localhost:8000/api/pvc-scans/history/summary', { headers: { 'Authorization': `Bearer ${token}` } })
-        ]);
-        
-        if (histRes.ok) {
-          const data = await histRes.json();
-          setScans(data.data?.data || []);
-        }
-        if (sumRes.ok) {
-          const data = await sumRes.json();
-          setSummary(data.data);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchHistory();
   }, [router, userData, authLoading]);
 
@@ -60,7 +60,11 @@ export default function RiwayatPage() {
 
       {/* ==================== KONTEN UTAMA ==================== */}
       <main className="max-w-6xl mx-auto px-6 py-10 animate-fade-in-up">
-        {isDoctor ? <DoctorRiwayat scans={scans} summary={summary} /> : <PatientRiwayat scans={scans} summary={summary} />}
+        {isDoctor ? (
+          <DoctorRiwayat scans={scans} summary={summary} />
+        ) : (
+          <PatientRiwayat scans={scans} summary={summary} onRefresh={fetchHistory} />
+        )}
       </main>
 
     </div>
@@ -176,7 +180,19 @@ function DoctorRiwayat({ scans, summary }: { scans: any[], summary: any }) {
 // ============================================================================
 // KOMPONEN: RIWAYAT PASIEN
 // ============================================================================
-function PatientRiwayat({ scans, summary }: { scans: any[], summary: any }) {
+function PatientRiwayat({ scans, summary, onRefresh }: { scans: any[], summary: any, onRefresh?: () => void }) {
+  const [selectedScan, setSelectedScan] = useState<any | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isReVerifyOpen, setIsReVerifyOpen] = useState(false);
+
+  const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
+  const [patientNote, setPatientNote] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [successMsg, setSuccessMsg] = useState<string>('');
+
   const getDoctorImage = (photo?: string) => {
     if (!photo) return "https://placehold.co/100x100/e2e8f0/64748b?text=DR";
     if (photo.startsWith("http://") || photo.startsWith("https://")) {
@@ -184,6 +200,89 @@ function PatientRiwayat({ scans, summary }: { scans: any[], summary: any }) {
     }
     const prefix = photo.startsWith("/") ? "" : "/";
     return `http://localhost:8000${prefix}${photo}`;
+  };
+
+  const getFormattedDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const getFormattedTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  const openReVerifyModal = async (scan: any) => {
+    setSelectedScan(scan);
+    setPatientNote(scan.patient_note || '');
+    setSelectedDoctorId(scan.doctor_profile_id || '');
+    setIsReVerifyOpen(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (doctorsList.length === 0) {
+      setLoadingDoctors(true);
+      try {
+        const res = await fetch('http://localhost:8000/api/doctor-profile/public');
+        if (res.ok) {
+          const data = await res.json();
+          setDoctorsList(data.data || data || []);
+        } else {
+          setErrorMsg('Gagal memuat daftar dokter.');
+        }
+      } catch (err) {
+        console.error(err);
+        setErrorMsg('Gagal terhubung ke server.');
+      } finally {
+        setLoadingDoctors(false);
+      }
+    }
+  };
+
+  const handleReVerifySubmit = async () => {
+    if (!selectedScan) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8000/api/pvc-scans/${selectedScan.id}/assign-doctor`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          patient_note: patientNote,
+          doctor_profile_id: selectedDoctorId || null
+        })
+      });
+
+      if (res.ok) {
+        setSuccessMsg('Verifikasi ulang berhasil diajukan!');
+        setTimeout(() => {
+          setIsReVerifyOpen(false);
+          setSelectedScan(null);
+          setSuccessMsg('');
+          if (onRefresh) onRefresh();
+        }, 1500);
+      } else {
+        const data = await res.json();
+        setErrorMsg(data.message || 'Gagal mengajukan verifikasi ulang.');
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Gagal menghubungi server.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -246,22 +345,6 @@ function PatientRiwayat({ scans, summary }: { scans: any[], summary: any }) {
         <div className="divide-y divide-slate-100">
           {scans.length === 0 && <div className="p-8 text-center text-slate-500">Belum ada riwayat</div>}
           {scans.map((item) => {
-            const getFormattedDate = (dateStr: string) => {
-              return new Date(dateStr).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-              });
-            };
-
-            const getFormattedTime = (dateStr: string) => {
-              return new Date(dateStr).toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              });
-            };
-
             return (
               <div key={item.id} className="p-8 hover:bg-slate-50/50 transition">
                 {/* 1. Header Item */}
@@ -274,11 +357,17 @@ function PatientRiwayat({ scans, summary }: { scans: any[], summary: any }) {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="bg-[#4880FF] hover:bg-blue-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                    <button 
+                      onClick={() => { setSelectedScan(item); setIsDetailOpen(true); }}
+                      className="bg-[#4880FF] hover:bg-blue-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                       <span>Detail</span>
                     </button>
-                    <button className="bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-500 text-slate-600 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                    <button 
+                      onClick={() => openReVerifyModal(item)}
+                      className="bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-500 text-slate-600 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                       <span>Re-verify</span>
                     </button>
@@ -368,6 +457,245 @@ function PatientRiwayat({ scans, summary }: { scans: any[], summary: any }) {
           })}
         </div>
       </div>
+
+      {/* ==================== POPUP: DETAIL MODAL ==================== */}
+      {isDetailOpen && selectedScan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col animate-scale-up">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="text-xl font-bold text-slate-800 font-sans">Detail Riwayat Deteksi</h3>
+              <button 
+                onClick={() => { setIsDetailOpen(false); setSelectedScan(null); }}
+                className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Date and Status */}
+              <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Tanggal Deteksi</p>
+                  <p className="font-bold text-slate-800">{getFormattedDate(selectedScan.created_at)} {getFormattedTime(selectedScan.created_at)}</p>
+                </div>
+                <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${selectedScan.verification_status === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                  {selectedScan.verification_status}
+                </span>
+              </div>
+
+              {/* ECG Image Preview (Larger) */}
+              <div>
+                <h4 className="text-sm font-bold text-slate-700 mb-2">Grafik ECG</h4>
+                {selectedScan.document_url ? (
+                  <div className="relative group overflow-hidden border border-slate-200 rounded-2xl bg-slate-50 flex items-center justify-center p-2">
+                    <img 
+                      src={`http://localhost:8000${selectedScan.document_url}`} 
+                      alt="ECG Large Preview" 
+                      className="w-full h-64 object-contain rounded-xl"
+                    />
+                    <a 
+                      href={`http://localhost:8000${selectedScan.document_url}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-semibold transition duration-200 gap-2 cursor-pointer"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Buka di Tab Baru
+                    </a>
+                  </div>
+                ) : (
+                  <div className="w-full h-32 bg-slate-50 border border-slate-200 border-dashed rounded-2xl flex items-center justify-center text-slate-400 text-sm">
+                    Tidak ada gambar ECG
+                  </div>
+                )}
+              </div>
+
+              {/* AI & Verification Side-by-Side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* AI Analysis */}
+                <div className="border border-slate-100 rounded-2xl p-5 bg-slate-50/50 space-y-3">
+                  <h4 className="font-bold text-slate-800 text-sm border-b pb-2 mb-2">Hasil Analisis AI</h4>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-500">Status Jantung</span>
+                    <span className="text-xs font-bold text-slate-800">{selectedScan.ai_result || 'Normal Rhythm'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-500">Confidence AI</span>
+                    <span className="text-xs font-bold text-blue-600">{selectedScan.ai_confidence}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-500">Kategori Risiko</span>
+                    <span className="text-xs font-bold text-amber-600">{selectedScan.risk_level || 'Ringan - Sedang'}</span>
+                  </div>
+                </div>
+
+                {/* Patient Note */}
+                <div className="border border-slate-100 rounded-2xl p-5 bg-slate-50/50">
+                  <h4 className="font-bold text-slate-800 text-sm border-b pb-2 mb-2">Catatan Pasien</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed italic">
+                    {selectedScan.patient_note || 'Tidak ada catatan tambahan dari pasien.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Doctor Verification Details */}
+              <div className="border border-slate-200/80 rounded-2xl p-5 bg-white space-y-4">
+                <h4 className="font-bold text-slate-800 text-sm border-b pb-2">Status Verifikasi Dokter</h4>
+                {selectedScan.verification_status === 'Verified' ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={getDoctorImage(selectedScan.doctor?.profile_photo)} 
+                        alt={selectedScan.doctor?.name} 
+                        className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                      />
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm">{selectedScan.doctor?.name}</p>
+                        <p className="text-xs text-slate-500">{selectedScan.doctor?.specialization || 'Spesialis Jantung'}</p>
+                      </div>
+                    </div>
+                    <div className="bg-[#4880FF]/5 border border-[#4880FF]/10 rounded-xl p-4 text-xs text-slate-700">
+                      <span className="font-bold text-slate-800 block mb-1">Catatan Medis Dokter:</span>
+                      <p className="leading-relaxed">{selectedScan.doctor_note || 'Tidak ada catatan khusus.'}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
+                    <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 animate-spin text-amber-500" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-700 text-sm">Menunggu Verifikasi</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Hasil ECG Anda sedang mengantre untuk diverifikasi oleh dokter {selectedScan.doctor?.name ? `(Dr. ${selectedScan.doctor.name})` : ''}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button 
+                onClick={() => { setIsDetailOpen(false); setSelectedScan(null); }}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-2.5 rounded-2xl text-xs transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== POPUP: RE-VERIFY MODAL ==================== */}
+      {isReVerifyOpen && selectedScan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 flex flex-col animate-scale-up">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="text-xl font-bold text-slate-800 font-sans">Ajukan Verifikasi Ulang</h3>
+              <button 
+                onClick={() => { setIsReVerifyOpen(false); setSelectedScan(null); setErrorMsg(''); setSuccessMsg(''); }}
+                className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Ajukan hasil scan ini kembali kepada dokter spesialis untuk diverifikasi ulang. Anda dapat memilih dokter yang spesifik atau menambahkan deskripsi keluhan tambahan.
+              </p>
+
+              {errorMsg && (
+                <div className="bg-red-50 text-red-600 border border-red-100 text-xs p-3.5 rounded-xl font-medium">
+                  {errorMsg}
+                </div>
+              )}
+
+              {successMsg && (
+                <div className="bg-green-50 text-green-600 border border-green-100 text-xs p-3.5 rounded-xl font-medium">
+                  {successMsg}
+                </div>
+              )}
+
+              {/* Form */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Pilih Dokter Spesialis</label>
+                  {loadingDoctors ? (
+                    <div className="text-xs text-slate-400">Memuat daftar dokter...</div>
+                  ) : (
+                    <select
+                      value={selectedDoctorId}
+                      onChange={(e) => setSelectedDoctorId(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-blue-500 transition cursor-pointer font-sans"
+                    >
+                      <option value="">-- Pilih Dokter (Atau Acak/Semua) --</option>
+                      {doctorsList.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.name} - {doc.specialization || 'Cardiology'}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Catatan/Keluhan untuk Dokter</label>
+                  <textarea
+                    rows={4}
+                    value={patientNote}
+                    onChange={(e) => setPatientNote(e.target.value)}
+                    placeholder="Jelaskan secara singkat gejala atau alasan mengapa Anda meminta verifikasi ulang..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-blue-500 resize-none transition font-sans"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2">
+              <button 
+                onClick={() => { setIsReVerifyOpen(false); setSelectedScan(null); setErrorMsg(''); setSuccessMsg(''); }}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer"
+                disabled={isSubmitting}
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleReVerifySubmit}
+                className="bg-[#4880FF] hover:bg-blue-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md shadow-blue-500/20 transition flex items-center gap-1.5 cursor-pointer"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg className="w-3.5 h-3.5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <span>Kirim Permintaan</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

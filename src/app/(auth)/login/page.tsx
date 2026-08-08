@@ -104,7 +104,7 @@ export default function LoginPage() {
           {/* Kartu Animasi Statis */}
           <div className="absolute top-1/4 left-10 z-20 bg-slate-900/60 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center gap-4 text-white shadow-xl animate-fade-in-up">
             <div className="w-8 h-8 rounded-full flex items-center justify-center">
-              <img src="/icons/VectorSearchPutih.svg" alt="Search" className="w-6 h-6 object-contain" />
+              <img src="/icons/VectorSearchWhite.svg" alt="Search" className="w-6 h-6 object-contain" />
             </div>
             <div>
               <p className="font-semibold text-sm">Well qualified doctors</p>

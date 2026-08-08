@@ -8,6 +8,36 @@ export default function PasienDashboard({ userData }: { userData: any }) {
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // States untuk popup Detail dan Edukasi
+  const [selectedScan, setSelectedScan] = useState<any | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isEduOpen, setIsEduOpen] = useState(false);
+
+  const getDoctorImage = (photo?: string) => {
+    if (!photo) return "https://placehold.co/100x100/e2e8f0/64748b?text=DR";
+    if (photo.startsWith("http://") || photo.startsWith("https://")) {
+      return photo;
+    }
+    const prefix = photo.startsWith("/") ? "" : "/";
+    return `http://localhost:8000${prefix}${photo}`;
+  };
+
+  const getFormattedDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const getFormattedTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -200,7 +230,15 @@ export default function PasienDashboard({ userData }: { userData: any }) {
         <div className="col-span-12 lg:col-span-6 bg-white rounded-3xl border-2 border-blue-200 shadow-[0_10px_25px_-5px_rgba(74,144,226,0.1),0_8px_10px_-6px_rgba(74,144,226,0.1)] p-6 relative overflow-hidden" data-purpose="ecg-main-result">
           <div className="flex justify-between items-start mb-6">
             <h3 className="text-2xl font-bold text-[#2c5da7] font-sans">Premature Ventricular Contractions</h3>
-            <button className="px-4 py-1.5 border border-blue-400 text-[#4a90e2] rounded-full text-sm font-medium hover:bg-blue-50 transition-colors">
+            <button 
+              onClick={() => {
+                if (lastScan) {
+                  setSelectedScan(lastScan);
+                  setIsDetailOpen(true);
+                }
+              }}
+              className="px-4 py-1.5 border border-blue-400 text-[#4a90e2] rounded-full text-sm font-medium hover:bg-blue-50 transition-colors cursor-pointer"
+            >
               Lihat Hasil
             </button>
           </div>
@@ -257,14 +295,23 @@ export default function PasienDashboard({ userData }: { userData: any }) {
         </div>
 
         {/* Doctor Notes Card */}
-        <div className="col-span-12 lg:col-span-3 bg-[#4a90e2] rounded-3xl shadow-[0_10px_25px_-5px_rgba(74,144,226,0.1),0_8px_10px_-6px_rgba(74,144,226,0.1)] p-6 text-white relative flex flex-col justify-between" data-purpose="doctor-notes">
+        <div 
+          onClick={() => {
+            if (lastScan) {
+              setSelectedScan(lastScan);
+              setIsDetailOpen(true);
+            }
+          }}
+          className="col-span-12 lg:col-span-3 bg-[#4a90e2] rounded-3xl shadow-[0_10px_25px_-5px_rgba(74,144,226,0.1),0_8px_10px_-6px_rgba(74,144,226,0.1)] p-6 text-white relative flex flex-col justify-between cursor-pointer hover:bg-blue-600/95 transition duration-300"
+          data-purpose="doctor-notes"
+        >
           <div className="flex justify-between items-start">
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
             </div>
-            <button className="bg-white text-[#4a90e2] px-4 py-1 rounded-full text-xs font-bold font-sans">
+            <span className="bg-white text-[#4a90e2] px-4 py-1 rounded-full text-xs font-bold font-sans">
               Catatan Dokter
-            </button>
+            </span>
           </div>
           <div className="mt-4">
             <h4 className="font-bold text-lg font-sans">{lastScan?.doctor?.name || "Belum ada verifikator"}</h4>
@@ -289,8 +336,14 @@ export default function PasienDashboard({ userData }: { userData: any }) {
               scanHistory.slice(0, 3).map((scan, idx) => (
                 <div key={scan.id || idx}>
                   {idx > 0 && <hr className="border-gray-100 my-4" />}
-                  <div className="flex items-center gap-4 group cursor-pointer">
-                    <div className="w-12 h-12 bg-blue-50 text-[#4a90e2] rounded-xl flex items-center justify-center shrink-0">
+                  <div 
+                    onClick={() => {
+                      setSelectedScan(scan);
+                      setIsDetailOpen(true);
+                    }}
+                    className="flex items-center gap-4 group cursor-pointer hover:bg-slate-50 p-2 rounded-2xl transition duration-200"
+                  >
+                    <div className="w-12 h-12 bg-blue-50 text-[#4a90e2] rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
                     </div>
                     <div className="flex-1">
@@ -299,7 +352,7 @@ export default function PasienDashboard({ userData }: { userData: any }) {
                         {scan.ai_result === 'PVC' ? 'PVC Terdeteksi' : 'Normal'}
                       </p>
                     </div>
-                    <svg className="w-5 h-5 text-[#4a90e2]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeLinecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    <svg className="w-5 h-5 text-[#4a90e2] group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeLinecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
                   </div>
                 </div>
               ))
@@ -413,7 +466,10 @@ export default function PasienDashboard({ userData }: { userData: any }) {
             <p className="text-xs text-gray-500 leading-relaxed mb-8 font-sans">
               Premature Ventricular Contractions (PVC) adalah denyut jantung ekstra yang mengacaukan ritme normal jantung Anda. Denyut ini dimulai di ruang ventrikel bawah jantung dan terjadi sebelum waktunya. PVC sangat umum terjadi dan bisa dipicu oleh gaya hidup, namun penting untuk dipantau secara klinis.
             </p>
-            <button className="px-6 py-2 border border-[#4a90e2] text-[#4a90e2] rounded-full text-xs font-bold hover:bg-blue-50 transition-colors font-sans">
+            <button 
+              onClick={() => setIsEduOpen(true)}
+              className="px-6 py-2 border border-[#4a90e2] text-[#4a90e2] rounded-full text-xs font-bold hover:bg-blue-50 transition-colors font-sans cursor-pointer"
+            >
               Pelajari Lebih Lanjut
             </button>
           </div>
@@ -537,6 +593,216 @@ export default function PasienDashboard({ userData }: { userData: any }) {
 
       </div>
 
+      {/* ==================== POPUP: DETAIL MODAL ==================== */}
+      {isDetailOpen && selectedScan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-slate-800">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col animate-scale-up">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="text-xl font-bold text-slate-800 font-sans">Detail Pemeriksaan ECG</h3>
+              <button 
+                onClick={() => { setIsDetailOpen(false); setSelectedScan(null); }}
+                className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Date and Status */}
+              <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Tanggal Deteksi</p>
+                  <p className="font-bold text-slate-800 font-sans">{getFormattedDate(selectedScan.created_at)} {getFormattedTime(selectedScan.created_at)}</p>
+                </div>
+                <span className={`text-xs font-bold px-3 py-1.5 rounded-full text-white ${
+                  selectedScan.verification_status === 'Verified' ? 'bg-[#22c55e]' : 'bg-amber-500'
+                }`}>
+                  {selectedScan.verification_status || 'Pending'}
+                </span>
+              </div>
+
+              {/* ECG Image Preview (Larger) */}
+              <div>
+                <h4 className="text-sm font-bold text-slate-700 mb-2 font-sans">Grafik ECG</h4>
+                {selectedScan.document_url ? (
+                  <div className="relative group overflow-hidden border border-slate-200 rounded-2xl bg-slate-50 flex items-center justify-center p-2">
+                    <img 
+                      src={`http://localhost:8000${selectedScan.document_url}`} 
+                      alt="ECG Large Preview" 
+                      className="w-full h-64 object-contain rounded-xl"
+                    />
+                    <a 
+                      href={`http://localhost:8000${selectedScan.document_url}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-semibold transition duration-200 gap-2 cursor-pointer"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      Buka di Tab Baru
+                    </a>
+                  </div>
+                ) : (
+                  <div className="w-full h-32 bg-slate-50 border border-slate-200 border-dashed rounded-2xl flex items-center justify-center text-slate-400 text-sm font-sans">
+                    Tidak ada gambar ECG
+                  </div>
+                )}
+              </div>
+
+              {/* AI & Verification Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* AI Analysis */}
+                <div className="border border-slate-100 rounded-2xl p-5 bg-slate-50/50 space-y-3">
+                  <h4 className="font-bold text-slate-800 text-sm border-b pb-2 mb-2 font-sans">Hasil Analisis AI</h4>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Status Jantung</span>
+                    <span className="font-bold text-slate-800 font-sans">{selectedScan.ai_result || 'Normal Rhythm'}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Confidence AI</span>
+                    <span className="font-bold text-blue-600 font-sans">{selectedScan.ai_confidence || 90}%</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Kategori Risiko</span>
+                    <span className="font-bold text-amber-600 font-sans">{selectedScan.risk_level || 'Ringan - Sedang'}</span>
+                  </div>
+                </div>
+
+                {/* Patient Note */}
+                <div className="border border-slate-100 rounded-2xl p-5 bg-slate-50/50">
+                  <h4 className="font-bold text-slate-800 text-sm border-b pb-2 mb-2 font-sans">Catatan Pasien</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed italic font-sans">
+                    {selectedScan.patient_note || 'Tidak ada catatan tambahan dari pasien.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Doctor Verification Details */}
+              <div className="border border-slate-200/80 rounded-2xl p-5 bg-white space-y-4">
+                <h4 className="font-bold text-slate-800 text-sm border-b pb-2 font-sans">Status Verifikasi Dokter</h4>
+                {selectedScan.verification_status === 'Verified' ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={getDoctorImage(selectedScan.doctor?.profile_photo)} 
+                        alt={selectedScan.doctor?.name} 
+                        className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                      />
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm font-sans">{selectedScan.doctor?.name}</p>
+                        <p className="text-xs text-slate-500 font-sans">{selectedScan.doctor?.specialization || 'Spesialis Jantung'}</p>
+                      </div>
+                    </div>
+                    <div className="bg-[#4880FF]/5 border border-[#4880FF]/10 rounded-xl p-4 text-xs text-slate-700">
+                      <span className="font-bold text-slate-800 block mb-1 font-sans">Catatan Medis Dokter:</span>
+                      <p className="leading-relaxed font-sans">{selectedScan.doctor_note || 'Tidak ada catatan khusus.'}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
+                    <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 animate-spin text-amber-500" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-700 text-sm font-sans">Menunggu Verifikasi</p>
+                      <p className="text-xs text-slate-400 mt-0.5 font-sans">Hasil ECG Anda sedang mengantre untuk diverifikasi oleh dokter {selectedScan.doctor?.name ? `(Dr. ${selectedScan.doctor.name})` : ''}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button 
+                onClick={() => { setIsDetailOpen(false); setSelectedScan(null); }}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-5 py-2.5 rounded-2xl text-xs transition cursor-pointer font-sans"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== POPUP: EDUKASI PVC MODAL ==================== */}
+      {isEduOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-slate-800">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col animate-scale-up">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="text-xl font-bold text-slate-800 font-sans">Edukasi PVC (Premature Ventricular Contractions)</h3>
+              <button 
+                onClick={() => setIsEduOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 text-sm leading-relaxed text-slate-600 font-sans">
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-2xl">
+                <h4 className="font-bold text-blue-900 mb-1">Apa itu PVC?</h4>
+                <p className="text-xs text-blue-800 leading-relaxed">
+                  PVC adalah denyut jantung ekstra yang diawali dari salah satu ventrikel (bilik bawah) jantung Anda. Denyut prematur ini mengganggu aktivitas listrik ritmis jantung yang normal.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-800 mb-2">Penyebab & Pemicu Umum</h4>
+                <ul className="list-disc pl-5 space-y-1.5 text-xs">
+                  <li><strong>Kafein & Stimulan:</strong> Konsumsi berlebih kopi, teh, minuman berenergi.</li>
+                  <li><strong>Stres & Kecemasan:</strong> Tingkat adrenalin tinggi memicu detak abnormal.</li>
+                  <li><strong>Kurang Tidur:</strong> Kelelahan fisik mengganggu sistem syaraf otonom jantung.</li>
+                  <li><strong>Ketidakseimbangan Elektrolit:</strong> Kadar kalium atau magnesium rendah dalam darah.</li>
+                  <li><strong>Penyakit Jantung:</strong> Riwayat serangan jantung, hipertensi, atau kelainan katup.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-800 mb-2">Gejala yang Perlu Diperhatikan</h4>
+                <ul className="list-disc pl-5 space-y-1.5 text-xs">
+                  <li>Sensasi dada terasa berdebar keras (palpitasi).</li>
+                  <li>Perasaan seperti jantung "berhenti berdetak" sejenak.</li>
+                  <li>Pusing atau kliyengan (dizziness).</li>
+                  <li>Sesak napas saat beristirahat atau beraktivitas ringan.</li>
+                </ul>
+              </div>
+
+              <div className="bg-red-50 border border-red-100 p-4 rounded-2xl">
+                <h4 className="font-bold text-red-900 mb-1 flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                  Kapan Harus Menghubungi Dokter?
+                </h4>
+                <p className="text-xs text-red-800 leading-relaxed">
+                  Jika gejala PVC sering muncul, mengganggu aktivitas sehari-hari, disertai nyeri dada hebat, pingsan, atau jika Anda memiliki riwayat penyakit jantung struktural sebelumnya.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button 
+                onClick={() => setIsEduOpen(false)}
+                className="bg-[#4880FF] hover:bg-blue-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition cursor-pointer font-sans"
+              >
+                Saya Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
